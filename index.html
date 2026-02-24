@@ -16,30 +16,40 @@
         .invoice-title-large { color: #0d3d7a; font-size: clamp(30px, 8vw, 60px); font-weight: 900; margin: 0; letter-spacing: 4px; }
         .meta-section { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; border-top: 3px solid #0d3d7a; padding-top: 20px; margin-bottom: 30px; }
         .info-label { font-weight: bold; color: #0d3d7a; margin-bottom: 8px; font-size: 14px; text-transform: uppercase; }
-        .meta-row { display: flex; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px solid #f0f0f0; align-items: center; }
+        .meta-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid #f0f0f0; white-space: nowrap; }
+        
         textarea, input { border: 1px solid #eee; padding: 6px; font-size: 14px; width: 100%; border-radius: 3px; font-family: inherit; background: transparent; box-sizing: border-box; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th { background-color: #0d3d7a !important; color: white !important; padding: 12px; text-align: left; -webkit-print-color-adjust: exact; }
         td { padding: 12px; border-bottom: 1px solid #eee; }
-        .num-input { text-align: right; width: 90px; font-weight: bold; border: none; font-size: 15px; }
-        .qty-input { text-align: center; width: 50px; border: 1px solid #eee; border-radius: 4px; }
+        .num-input { text-align: right; width: 120px; font-weight: bold; border: none; font-size: 15px; }
         .summary-wrapper { display: flex; justify-content: flex-end; margin-top: 20px; }
         .summary-table { width: 100%; max-width: 300px; }
         .summary-row { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; font-weight: bold; }
         .total-box { background: #0d3d7a !important; color: white !important; padding: 15px; font-weight: bold; font-size: 22px; margin-top: 10px; border-radius: 4px; -webkit-print-color-adjust: exact; }
+        
         .footer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 50px; }
         .footer-title { font-weight: bold; color: #0d3d7a; border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-bottom: 10px; text-transform: uppercase; }
         .bank-info-box { background: #f9f9f9; padding: 15px; border-radius: 4px; border-left: 4px solid #0d3d7a; font-size: 13px; }
         .bank-info-box input { border: none; font-weight: bold; width: auto; }
         
-        /* დამატებითი ველების სტილი ბოლოში */
+        /* ქვედა უჯრები */
         .extra-fields-section { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 40px; padding-top: 20px; border-top: 1px dashed #ddd; }
-        .extra-field-box textarea { border: 1px solid #f0f0f0; resize: none; font-size: 13px; color: #555; }
+        .extra-field-box textarea { border: 1px solid #f0f0f0; resize: none; font-size: 13px; color: #555; height: 50px; }
 
         .no-print { text-align: center; margin-top: 50px; display: flex; justify-content: center; gap: 10px; }
         button { background: #0d3d7a; color: white; border: none; padding: 15px 30px; cursor: pointer; border-radius: 5px; font-weight: bold; }
         .reset-btn { background: #d9534f; }
-        @media print { .no-print { display: none !important; } body { padding: 0; } }
+
+        /* ბეჭდვის ლოგიკა */
+        @media print { 
+            .no-print { display: none !important; } 
+            body { padding: 0; }
+            textarea, input { border: none !important; }
+            /* თუ ცარიელია, არ გამოჩნდეს ბეჭდვისას */
+            .hide-if-empty:placeholder-shown { display: none !important; }
+            .extra-fields-section:has(textarea:placeholder-shown:only-child) { border: none !important; }
+        }
     </style>
 </head>
 <body onload="loadAllData()">
@@ -73,23 +83,27 @@
         </div>
         <div>
             <div class="info-label">Invoice Details:</div>
-            <div class="meta-row"><span>Invoice #</span><input type="text" id="inv_num" oninput="saveAllData()" value="INV-2026-001" style="text-align: right; border:none;"></div>
-            <div class="meta-row" style="border-bottom: none;"><span>Date</span><input type="text" id="inv_date" oninput="saveAllData()" value="24/02/2026" style="text-align: right; border:none;"></div>
+            <div class="meta-row">
+                <span>Invoice #</span>
+                <input type="text" id="inv_num" oninput="saveAllData()" value="2026-001" style="text-align: right; border:none; width: 100%;">
+            </div>
+            <div class="meta-row" style="border-bottom: none;">
+                <span>Date</span>
+                <input type="text" id="inv_date" oninput="saveAllData()" value="24/02/2026" style="text-align: right; border:none; width: 100%;">
+            </div>
         </div>
     </div>
 
     <table>
         <thead>
             <tr>
-                <th style="width: 60%;">Description</th>
-                <th style="text-align: center; width: 10%;">Qty</th>
+                <th style="width: 70%;">Description</th>
                 <th style="text-align: right; width: 30%;">Amount</th>
             </tr>
         </thead>
         <tbody id="invoice-items">
             <tr>
                 <td><input type="text" id="service_desc1" oninput="saveAllData()" value="Installation costs" style="border:none;"></td>
-                <td style="text-align: center;"><input type="number" id="qty1" value="1" class="qty-input" oninput="calculateAll()"></td>
                 <td style="text-align: right;">€ <input type="number" id="price1" value="0.00" class="num-input" oninput="calculateAll()"></td>
             </tr>
         </tbody>
@@ -126,14 +140,12 @@
         </div>
     </div>
 
-    <div class="extra-fields-section">
+    <div class="extra-fields-section" id="extra-section">
         <div class="extra-field-box">
-            <div class="info-label" style="font-size: 11px;">Additional Info 1:</div>
-            <textarea id="extra_note_left" rows="2" oninput="saveAllData()" placeholder="Enter number or note..."></textarea>
+            <textarea id="extra_note_left" class="hide-if-empty" oninput="saveAllData()" placeholder=" "></textarea>
         </div>
         <div class="extra-field-box">
-            <div class="info-label" style="font-size: 11px;">Additional Info 2:</div>
-            <textarea id="extra_note_right" rows="2" oninput="saveAllData()" placeholder="Enter number or note..."></textarea>
+            <textarea id="extra_note_right" class="hide-if-empty" oninput="saveAllData()" placeholder=" "></textarea>
         </div>
     </div>
 
@@ -146,17 +158,17 @@
         function saveAllData() {
             const fields = [
                 'my_comp_name', 'my_reg_no', 'my_addr', 'my_phone', 'my_email', 
-                'client_info', 'inv_num', 'inv_date', 'service_desc1', 'qty1', 
+                'client_info', 'inv_num', 'inv_date', 'service_desc1', 
                 'price1', 'vat_rate', 'bank_recip', 'bank_name', 'bank_iban', 
                 'bank_bic', 'extra_note_left', 'extra_note_right'
             ];
             const data = {};
             fields.forEach(id => { const el = document.getElementById(id); if(el) data[id] = el.value; });
-            localStorage.setItem('db_invoice_v4', JSON.stringify(data));
+            localStorage.setItem('db_invoice_vfinal_clean', JSON.stringify(data));
         }
 
         function loadAllData() {
-            const saved = localStorage.getItem('db_invoice_v4');
+            const saved = localStorage.getItem('db_invoice_vfinal_clean');
             if (saved) {
                 const data = JSON.parse(saved);
                 for (let id in data) { if (document.getElementById(id)) document.getElementById(id).value = data[id]; }
@@ -165,10 +177,8 @@
         }
 
         function calculateAll() {
-            let q1 = parseFloat(document.getElementById('qty1').value) || 0;
             let p1 = parseFloat(document.getElementById('price1').value) || 0;
-            
-            let subtotal = (q1 * p1);
+            let subtotal = p1;
             let vatRate = parseFloat(document.getElementById('vat_rate').value) || 0;
             let vatValue = subtotal * (vatRate / 100);
             let total = subtotal + vatValue;
@@ -178,7 +188,7 @@
             saveAllData();
         }
 
-        function clearEverything() { if(confirm("Clear all data?")) { localStorage.removeItem('db_invoice_v4'); location.reload(); } }
+        function clearEverything() { if(confirm("Clear all data?")) { localStorage.removeItem('db_invoice_vfinal_clean'); location.reload(); } }
     </script>
 
 </body>
