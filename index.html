@@ -14,6 +14,7 @@
         .company-details input { display: block; width: 100%; border: none; background: transparent; font-family: inherit; color: #666; font-size: 13px; padding: 0; margin: 0; }
         #my_comp_name { font-size: 24px; color: #0d3d7a; font-weight: bold; margin-bottom: 5px; }
         .invoice-title-large { color: #0d3d7a; font-size: clamp(30px, 8vw, 60px); font-weight: 900; margin: 0; letter-spacing: 4px; }
+        
         .meta-section { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; border-top: 3px solid #0d3d7a; padding-top: 20px; margin-bottom: 30px; }
         .info-label { font-weight: bold; color: #0d3d7a; margin-bottom: 8px; font-size: 14px; text-transform: uppercase; }
         .meta-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid #f0f0f0; white-space: nowrap; }
@@ -22,18 +23,35 @@
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th { background-color: #0d3d7a !important; color: white !important; padding: 12px; text-align: left; -webkit-print-color-adjust: exact; }
         td { padding: 12px; border-bottom: 1px solid #eee; }
-        .num-input { text-align: right; width: 120px; font-weight: bold; border: none; font-size: 15px; }
+        
+        .price-container { display: flex; justify-content: flex-end; align-items: center; font-weight: bold; font-size: 15px; }
+        .euro-symbol { margin-right: 1px; color: #333; }
+        .num-input { text-align: right; width: 90px; border: none; font-weight: bold; padding: 0; margin: 0; }
+        
         .summary-wrapper { display: flex; justify-content: flex-end; margin-top: 20px; }
         .summary-table { width: 100%; max-width: 300px; }
         .summary-row { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; font-weight: bold; }
-        .total-box { background: #0d3d7a !important; color: white !important; padding: 15px; font-weight: bold; font-size: 22px; margin-top: 10px; border-radius: 4px; -webkit-print-color-adjust: exact; }
+        
+        .vat-box { display: inline-flex; align-items: center; }
+        .vat-input { width: 25px; text-align: center; border: none; font-weight: bold; padding: 0; margin: 0; }
+
+        /* ყვითელი TOTAL ბლოკი */
+        .total-box { 
+            background: #ffc107 !important; 
+            color: #0d3d7a !important; 
+            padding: 15px; 
+            font-weight: bold; 
+            font-size: 22px; 
+            margin-top: 10px; 
+            border-radius: 4px; 
+            -webkit-print-color-adjust: exact; 
+        }
         
         .footer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 50px; }
         .footer-title { font-weight: bold; color: #0d3d7a; border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-bottom: 10px; text-transform: uppercase; }
         .bank-info-box { background: #f9f9f9; padding: 15px; border-radius: 4px; border-left: 4px solid #0d3d7a; font-size: 13px; }
         .bank-info-box input { border: none; font-weight: bold; width: auto; }
         
-        /* ქვედა უჯრები */
         .extra-fields-section { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 40px; padding-top: 20px; border-top: 1px dashed #ddd; }
         .extra-field-box textarea { border: 1px solid #f0f0f0; resize: none; font-size: 13px; color: #555; height: 50px; }
 
@@ -41,14 +59,12 @@
         button { background: #0d3d7a; color: white; border: none; padding: 15px 30px; cursor: pointer; border-radius: 5px; font-weight: bold; }
         .reset-btn { background: #d9534f; }
 
-        /* ბეჭდვის ლოგიკა */
         @media print { 
             .no-print { display: none !important; } 
             body { padding: 0; }
             textarea, input { border: none !important; }
-            /* თუ ცარიელია, არ გამოჩნდეს ბეჭდვისას */
             .hide-if-empty:placeholder-shown { display: none !important; }
-            .extra-fields-section:has(textarea:placeholder-shown:only-child) { border: none !important; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
         }
     </style>
 </head>
@@ -97,14 +113,18 @@
     <table>
         <thead>
             <tr>
-                <th style="width: 70%;">Description</th>
-                <th style="text-align: right; width: 30%;">Amount</th>
+                <th style="width: 75%;">Description</th>
+                <th style="text-align: right; width: 25%;">Amount</th>
             </tr>
         </thead>
         <tbody id="invoice-items">
             <tr>
                 <td><input type="text" id="service_desc1" oninput="saveAllData()" value="Installation costs" style="border:none;"></td>
-                <td style="text-align: right;">€ <input type="number" id="price1" value="0.00" class="num-input" oninput="calculateAll()"></td>
+                <td style="text-align: right;">
+                    <div class="price-container">
+                        <span class="euro-symbol">€</span><input type="number" id="price1" value="0.00" class="num-input" oninput="calculateAll()">
+                    </div>
+                </td>
             </tr>
         </tbody>
     </table>
@@ -112,13 +132,13 @@
     <div class="summary-wrapper">
         <div class="summary-table">
             <div class="summary-row">
-                <span>VAT (<input type="number" id="vat_rate" value="0" oninput="calculateAll()" style="width: 40px; text-align: center; border: none; font-weight: bold;">%)</span>
-                <span>€ <span id="vat_amount">0.00</span></span>
+                <span class="vat-box">VAT (<input type="number" id="vat_rate" value="0" class="vat-input" oninput="calculateAll()">%)</span>
+                <span>€<span id="vat_amount">0.00</span></span>
             </div>
             <div class="total-box">
                 <div style="display: flex; justify-content: space-between;">
                     <span>TOTAL</span>
-                    <span>€ <span id="grand_total">0.00</span></span>
+                    <span>€<span id="grand_total">0.00</span></span>
                 </div>
             </div>
         </div>
@@ -164,11 +184,11 @@
             ];
             const data = {};
             fields.forEach(id => { const el = document.getElementById(id); if(el) data[id] = el.value; });
-            localStorage.setItem('db_invoice_vfinal_clean', JSON.stringify(data));
+            localStorage.setItem('db_invoice_v_yellow', JSON.stringify(data));
         }
 
         function loadAllData() {
-            const saved = localStorage.getItem('db_invoice_vfinal_clean');
+            const saved = localStorage.getItem('db_invoice_v_yellow');
             if (saved) {
                 const data = JSON.parse(saved);
                 for (let id in data) { if (document.getElementById(id)) document.getElementById(id).value = data[id]; }
@@ -188,7 +208,7 @@
             saveAllData();
         }
 
-        function clearEverything() { if(confirm("Clear all data?")) { localStorage.removeItem('db_invoice_vfinal_clean'); location.reload(); } }
+        function clearEverything() { if(confirm("Clear all data?")) { localStorage.removeItem('db_invoice_v_yellow'); location.reload(); } }
     </script>
 
 </body>
