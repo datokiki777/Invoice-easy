@@ -4,77 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>D-BUILDER Invoice</title>
-    
-    <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; max-width: 850px; margin: auto; padding: 20px; color: #333; line-height: 1.4; background-color: #fff; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
-        .logo-box { display: flex; align-items: center; gap: 20px; }
-        .db-logo { width: 90px; height: 90px; flex-shrink: 0; }
-        .company-details { display: flex; flex-direction: column; gap: 2px; }
-        .company-details input { display: block; width: 100%; border: none; background: transparent; font-family: inherit; color: #666; font-size: 13px; padding: 0; margin: 0; }
-        #my_comp_name { font-size: 24px; color: #0d3d7a; font-weight: bold; margin-bottom: 5px; }
-        .invoice-title-large { color: #0d3d7a; font-size: clamp(30px, 8vw, 60px); font-weight: 900; margin: 0; letter-spacing: 4px; }
-        
-        .meta-section { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; border-top: 3px solid #0d3d7a; padding-top: 20px; margin-bottom: 30px; }
-        .info-label { font-weight: bold; color: #0d3d7a; margin-bottom: 8px; font-size: 14px; text-transform: uppercase; }
-        .meta-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid #f0f0f0; white-space: nowrap; }
-        
-        textarea, input { border: 1px solid #eee; padding: 6px; font-size: 14px; width: 100%; border-radius: 3px; font-family: inherit; background: transparent; box-sizing: border-box; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th { background-color: #0d3d7a !important; color: white !important; padding: 12px; text-align: left; -webkit-print-color-adjust: exact; }
-        td { padding: 12px; border-bottom: 1px solid #eee; }
-        
-        .price-container { display: flex; justify-content: flex-end; align-items: center; font-weight: bold; font-size: 15px; }
-        .euro-symbol { margin-right: 1px; color: #333; }
-        .num-input { text-align: right; width: 90px; border: none; font-weight: bold; padding: 0; margin: 0; }
-        
-        .summary-wrapper { display: flex; justify-content: flex-end; margin-top: 20px; }
-        .summary-table { width: 100%; max-width: 300px; }
-        .summary-row { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; font-weight: bold; }
-        
-        .vat-box { display: inline-flex; align-items: center; }
-        .vat-input { width: 25px; text-align: center; border: none; font-weight: bold; padding: 0; margin: 0; }
-
-        /* ყვითელი TOTAL ბლოკი */
-        .total-box { 
-            background: #ffc107 !important; 
-            color: #0d3d7a !important; 
-            padding: 15px; 
-            font-weight: bold; 
-            font-size: 22px; 
-            margin-top: 10px; 
-            border-radius: 4px; 
-            -webkit-print-color-adjust: exact; 
-        }
-        
-        .footer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 50px; }
-        .footer-title { font-weight: bold; color: #0d3d7a; border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-bottom: 10px; text-transform: uppercase; }
-        .bank-info-box { background: #f9f9f9; padding: 15px; border-radius: 4px; border-left: 4px solid #0d3d7a; font-size: 13px; }
-        .bank-info-box input { border: none; font-weight: bold; width: auto; }
-        
-        .extra-fields-section { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 40px; padding-top: 20px; border-top: 1px dashed #ddd; }
-        .extra-field-box textarea { border: 1px solid #f0f0f0; resize: none; font-size: 13px; color: #555; height: 50px; }
-
-        .no-print { text-align: center; margin-top: 50px; display: flex; justify-content: center; gap: 10px; }
-        button { background: #0d3d7a; color: white; border: none; padding: 15px 30px; cursor: pointer; border-radius: 5px; font-weight: bold; }
-        .reset-btn { background: #d9534f; }
-
-        @media print { 
-            .no-print { display: none !important; } 
-            body { padding: 0; }
-            textarea, input { border: none !important; }
-            .hide-if-empty:placeholder-shown { display: none !important; }
-            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body onload="loadAllData()">
 
     <div class="header">
         <div class="logo-box">
             <div class="db-logo">
-                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="5" y="5" width="90" height="90" rx="15" fill="#0d3d7a"/>
+                <svg width="90" height="90" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="2" y="2" width="96" height="96" rx="18" fill="rgba(255,255,255,0.15)"/>
+                    <rect x="6" y="6" width="88" height="88" rx="15" fill="#0d3d7a"/>
                     <path d="M25 35 L50 20 L75 35 L50 50 Z" fill="white"/>
                     <path d="M25 50 L50 65 L75 50 L50 35 Z" fill="rgba(255,255,255,0.7)"/>
                     <path d="M25 65 L50 80 L75 65 L50 50 Z" fill="white"/>
@@ -95,54 +34,72 @@
     <div class="meta-section">
         <div>
             <div class="info-label">Billed To:</div>
-            <textarea id="client_info" rows="4" oninput="saveAllData()" placeholder="Client details..."></textarea>
+            <textarea id="client_info" rows="3" oninput="saveAllData()" placeholder="Client details..."></textarea>
         </div>
         <div>
             <div class="info-label">Invoice Details:</div>
             <div class="meta-row">
                 <span>Invoice #</span>
-                <input type="text" id="inv_num" oninput="saveAllData()" value="2026-001" style="text-align: right; border:none; width: 100%;">
+                <input type="text" id="inv_num" oninput="saveAllData()" value="">
             </div>
-            <div class="meta-row" style="border-bottom: none;">
+            <div class="meta-row">
                 <span>Date</span>
-                <input type="text" id="inv_date" oninput="saveAllData()" value="24/02/2026" style="text-align: right; border:none; width: 100%;">
+                <input type="text" id="inv_date" oninput="saveAllData()" value="">
             </div>
         </div>
     </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th style="width: 75%;">Description</th>
-                <th style="text-align: right; width: 25%;">Amount</th>
-            </tr>
-        </thead>
-        <tbody id="invoice-items">
-            <tr>
-                <td><input type="text" id="service_desc1" oninput="saveAllData()" value="Installation costs" style="border:none;"></td>
-                <td style="text-align: right;">
-                    <div class="price-container">
-                        <span class="euro-symbol">€</span><input type="number" id="price1" value="0.00" class="num-input" oninput="calculateAll()">
-                    </div>
-                </td>
-            </tr>
-        </tbody>
-    </table>
-
-    <div class="summary-wrapper">
-        <div class="summary-table">
-            <div class="summary-row">
-                <span class="vat-box">VAT (<input type="number" id="vat_rate" value="0" class="vat-input" oninput="calculateAll()">%)</span>
-                <span>€<span id="vat_amount">0.00</span></span>
-            </div>
-            <div class="total-box">
-                <div style="display: flex; justify-content: space-between;">
-                    <span>TOTAL</span>
-                    <span>€<span id="grand_total">0.00</span></span>
+   <table>
+    <thead>
+        <tr>
+            <th style="width: 60%;">Description</th>
+            <th style="width: 15%; text-align: center;">Qty</th>
+            <th style="width: 25%; text-align: right;">Amount</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td class="desc-cell"><input type="text" id="service_desc1" oninput="saveAllData()" value="01/02 - 22/02 installation cost"></td>
+            <td class="qty-cell"><input type="number" id="qty1" value="5" class="qty-input" oninput="calculateAll()" min="0" step="0.01"></td>
+            <td class="price-cell">
+                <div class="price-container">
+                    <span class="euro-symbol">€</span>
+                    <input type="number" id="price1" value="500.00" class="num-input" oninput="calculateAll()" min="0" step="0.01">
                 </div>
+            </td>
+        </tr>
+        <tr>
+            <td class="desc-cell"><input type="text" id="service_desc2" oninput="saveAllData()" value="" placeholder="Additional work..."></td>
+            <td class="qty-cell"><input type="number" id="qty2" value="0" class="qty-input" oninput="calculateAll()" min="0" step="0.01"></td>
+            <td class="price-cell">
+                <div class="price-container">
+                    <span class="euro-symbol">€</span>
+                    <input type="number" id="price2" value="0.00" class="num-input" oninput="calculateAll()" min="0" step="0.01">
+                </div>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+   <div class="summary-wrapper">
+    <div class="summary-table">
+        <div class="summary-row">
+            <span class="vat-box">
+                VAT (
+                <input type="number" id="vat_rate" value="19" class="vat-input" oninput="calculateAll()" min="0" max="100" step="0.1">
+                %)
+                <input type="text" id="vat_text" class="vat-text-input" placeholder="" oninput="calculateAll()" value="">
+            </span>
+            <span>€<span id="vat_amount">0.00</span></span>
+        </div>
+        <div class="total-box">
+            <div class="total-row">
+                <span>TOTAL</span>
+                <span>€<span id="grand_total">0.00</span></span>
             </div>
         </div>
     </div>
+</div>
 
     <div class="footer-grid">
         <div>
@@ -156,59 +113,132 @@
         </div>
         <div>
             <div class="footer-title">Terms</div>
-            <p style="font-size: 14px; margin: 0;">Payment due within 7 days. Thank you for your business!</p>
+            <p>Payment due within 7 days. Thank you for your business!</p>
         </div>
     </div>
 
-    <div class="extra-fields-section" id="extra-section">
-        <div class="extra-field-box">
-            <textarea id="extra_note_left" class="hide-if-empty" oninput="saveAllData()" placeholder=" "></textarea>
-        </div>
-        <div class="extra-field-box">
-            <textarea id="extra_note_right" class="hide-if-empty" oninput="saveAllData()" placeholder=" "></textarea>
-        </div>
+    <div class="status-bar no-print">
+        <span>💾 ავტომატური შენახვა</span>
+        <span>📅 დღევანდელი თარიღი: <span id="today_status"></span></span>
     </div>
 
-    <div class="no-print">
-        <button onclick="window.print()">Download PDF / Print</button>
-        <button class="reset-btn" onclick="clearEverything()">Reset</button>
+    <div class="no-print buttons">
+        <button onclick="window.print()">📥 Download PDF</button>
+        <button class="new-invoice-btn" onclick="newInvoice()">➕ ახალი</button>
+        <button class="reset-btn" onclick="clearEverything()">🔄 Reset</button>
     </div>
 
     <script>
-        function saveAllData() {
-            const fields = [
-                'my_comp_name', 'my_reg_no', 'my_addr', 'my_phone', 'my_email', 
-                'client_info', 'inv_num', 'inv_date', 'service_desc1', 
-                'price1', 'vat_rate', 'bank_recip', 'bank_name', 'bank_iban', 
-                'bank_bic', 'extra_note_left', 'extra_note_right'
-            ];
-            const data = {};
-            fields.forEach(id => { const el = document.getElementById(id); if(el) data[id] = el.value; });
-            localStorage.setItem('db_invoice_v_yellow', JSON.stringify(data));
-        }
+ function saveAllData() {
+    const fields = [
+        'my_comp_name', 'my_reg_no', 'my_addr', 'my_phone', 'my_email',
+        'client_info', 'inv_num', 'inv_date', 
+        'service_desc1', 'qty1', 'price1',
+        'service_desc2', 'qty2', 'price2',
+        'vat_rate', 'vat_text', 'bank_recip', 'bank_name', 'bank_iban', 'bank_bic'
+    ];
+    const data = {};
+    fields.forEach(id => { 
+        const el = document.getElementById(id); 
+        if (el) data[id] = el.value; 
+    });
+    localStorage.setItem('db_invoice_data', JSON.stringify(data));
+}
 
-        function loadAllData() {
-            const saved = localStorage.getItem('db_invoice_v_yellow');
-            if (saved) {
-                const data = JSON.parse(saved);
-                for (let id in data) { if (document.getElementById(id)) document.getElementById(id).value = data[id]; }
+function loadAllData() {
+    const saved = localStorage.getItem('db_invoice_data');
+    
+    if (saved) {
+        const data = JSON.parse(saved);
+        for (let id in data) { 
+            if (document.getElementById(id)) {
+                document.getElementById(id).value = data[id];
             }
-            calculateAll();
+        }
+    }
+    
+    document.getElementById('inv_date').value = getCurrentDate();
+    document.getElementById('inv_num').value = generateInvoiceNumber();
+    document.getElementById('today_status').innerText = getCurrentDate();
+    
+    calculateAll();
+}
+
+function calculateAll() {
+    // პირველი ხაზი
+    let qty1 = parseFloat(document.getElementById('qty1').value) || 0;
+    let price1 = parseFloat(document.getElementById('price1').value) || 0;
+    let subtotal1 = qty1 * price1;
+    
+    // მეორე ხაზი
+    let qty2 = parseFloat(document.getElementById('qty2').value) || 0;
+    let price2 = parseFloat(document.getElementById('price2').value) || 0;
+    let subtotal2 = qty2 * price2;
+    
+    // მთლიანი თანხა
+    let subtotal = subtotal1 + subtotal2;
+    
+    let vatRate = parseFloat(document.getElementById('vat_rate').value) || 0;
+    let vatValue = subtotal * (vatRate / 100);
+    let total = subtotal + vatValue;
+
+    document.getElementById('vat_amount').innerText = vatValue.toFixed(2);
+    document.getElementById('grand_total').innerText = total.toFixed(2);
+    
+    // VAT ტექსტის ველის შენახვა
+    saveAllData();
+}
+
+function generateInvoiceNumber() {
+    const saved = localStorage.getItem('db_invoice_data');
+    const currentYear = new Date().getFullYear();
+    
+    if (saved) {
+        const data = JSON.parse(saved);
+        const lastNum = data.inv_num;
+        if (lastNum) {
+            const parts = lastNum.split('-');
+            if (parts.length === 2 && parts[0] == currentYear) {
+                const nextNum = parseInt(parts[1]) + 1;
+                return `${currentYear}-${nextNum.toString().padStart(3, '0')}`;
+            }
+        }
+    }
+    return `${currentYear}-001`;
+}
+
+function getCurrentDate() {
+    const today = new Date();
+    const day = today.getDate().toString().padStart(2, '0');
+    const month = (today.getMonth() + 1).toString().padStart(2, '0');
+    const year = today.getFullYear();
+    return `${day}/${month}/${year}`;
+}
+
+        function newInvoice() {
+            if(confirm("შევქმნათ ახალი ინვოისი?")) {
+                document.getElementById('inv_num').value = generateInvoiceNumber();
+                document.getElementById('inv_date').value = getCurrentDate();
+                document.getElementById('client_info').value = '';
+                document.getElementById('service_desc1').value = '';
+                document.getElementById('qty1').value = '1';
+                document.getElementById('price1').value = '0.00';
+                document.getElementById('service_desc2').value = '';
+                document.getElementById('qty2').value = '0';
+                document.getElementById('price2').value = '0.00';
+                document.getElementById('vat_rate').value = '0';
+                document.getElementById('vat_text').value = '';
+                saveAllData();
+                calculateAll();
+            }
         }
 
-        function calculateAll() {
-            let p1 = parseFloat(document.getElementById('price1').value) || 0;
-            let subtotal = p1;
-            let vatRate = parseFloat(document.getElementById('vat_rate').value) || 0;
-            let vatValue = subtotal * (vatRate / 100);
-            let total = subtotal + vatValue;
-
-            document.getElementById('vat_amount').innerText = vatValue.toFixed(2);
-            document.getElementById('grand_total').innerText = total.toLocaleString('en-US', {minimumFractionDigits: 2});
-            saveAllData();
+        function clearEverything() { 
+            if(confirm("გასუფთავება?")) { 
+                localStorage.removeItem('db_invoice_data'); 
+                location.reload(); 
+            } 
         }
-
-        function clearEverything() { if(confirm("Clear all data?")) { localStorage.removeItem('db_invoice_v_yellow'); location.reload(); } }
     </script>
 
 </body>
