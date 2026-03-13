@@ -1,7 +1,9 @@
-const CACHE_NAME = 'dbuilder-invoice-v2';
+const CACHE_NAME = 'dbuilder-invoice-v3';
 const ASSETS = [
   './',
   './index.html',
+  './style.css',
+  './app.js',
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png'
@@ -11,7 +13,6 @@ self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
   );
-  // No skipWaiting — let user confirm update via popup
 });
 
 self.addEventListener('activate', e => {
@@ -29,7 +30,6 @@ self.addEventListener('fetch', e => {
   );
 });
 
-// Message from app: apply update immediately
 self.addEventListener('message', e => {
   if (e.data && e.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
