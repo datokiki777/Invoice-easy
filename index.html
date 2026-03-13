@@ -6,10 +6,10 @@
     <meta name="theme-color" content="#0d3d7a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="D-Invoice">
+    <meta name="apple-mobile-web-app-title" content="Invoice">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
-    <title>D-BUILDER Invoice</title>
+    <title>Invoice</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link rel="stylesheet" href="style.css">
@@ -27,21 +27,26 @@
             <path d="M25 65 L50 80 L75 65 L50 50 Z" fill="white"/>
             <circle cx="50" cy="50" r="6" fill="#0d3d7a"/>
         </svg>
-        D-BUILDER
+        Invoice
     </div>
-    <div style="display:flex;align-items:center;gap:8px;">
-    <button class="lang-toggle" id="lang-toggle" onclick="toggleLang()" title="Switch invoice language">🇬🇧 EN</button>
-    <div class="nav-tabs">
-        <button class="nav-tab active" onclick="showPage('invoice')" id="tab-invoice">
-            📄 <span>Invoice</span>
-        </button>
-        <button class="nav-tab" onclick="showPage('history')" id="tab-history">
-            🗂️ <span>History</span>
-        </button>
-        <button class="nav-tab" onclick="showPage('clients')" id="tab-clients">
-            👥 <span>Clients</span>
-        </button>
-    </div>
+
+      <div class="top-nav-right">
+        <button class="lang-toggle" id="lang-toggle" onclick="toggleLang()" title="Switch invoice language">🇬🇧 EN</button>
+
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showPage('invoice')" id="tab-invoice">
+                📄 <span>Invoice</span>
+            </button>
+            <button class="nav-tab" onclick="showPage('history')" id="tab-history">
+                🗂️ <span>History</span>
+            </button>
+            <button class="nav-tab" onclick="showPage('clients')" id="tab-clients">
+                👥 <span>Clients</span>
+            </button>
+            <button class="nav-tab" onclick="showPage('companies')" id="tab-companies">
+                🏢 <span>Companies</span>
+            </button>
+        </div>
     </div>
 </nav>
 
@@ -62,24 +67,18 @@
         <!-- Header -->
         <div class="inv-header">
             <div class="company-block">
-                <div class="logo-svg">
-                    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="2" y="2" width="96" height="96" rx="18" fill="rgba(255,255,255,0.15)"/>
-                        <rect x="6" y="6" width="88" height="88" rx="15" fill="#0d3d7a"/>
-                        <path d="M25 35 L50 20 L75 35 L50 50 Z" fill="white"/>
-                        <path d="M25 50 L50 65 L75 50 L50 35 Z" fill="rgba(255,255,255,0.7)"/>
-                        <path d="M25 65 L50 80 L75 65 L50 50 Z" fill="white"/>
-                        <circle cx="50" cy="50" r="6" fill="#0d3d7a"/>
-                    </svg>
-                </div>
+                <div class="logo-svg" id="company-logo-box"></div>
+
                 <div class="company-fields">
-                    <input type="text" class="inv-input company-name" id="my_comp_name" oninput="saveAllData()" value="D-BUILDER SIA">
-                    <input type="text" class="inv-input" id="my_reg_no" oninput="saveAllData()" value="Reg No: 40203480659">
-                    <input type="text" class="inv-input" id="my_addr" oninput="saveAllData()" value="Mirdzas Ķempes iela 11-34, Rīga, LV-1014">
-                    <input type="text" class="inv-input" id="my_phone" oninput="saveAllData()" value="Tel: +371 28601141">
-                    <input type="text" class="inv-input" id="my_email" oninput="saveAllData()" value="dbuilder.team@gmail.com">
+                    <input type="text" class="inv-input company-name" id="my_comp_name" oninput="saveAllData()" value="" placeholder="Company name">
+                    <input type="text" class="inv-input" id="my_reg_no" oninput="saveAllData()" value="" placeholder="Reg No / VAT No">
+                    <input type="text" class="inv-input" id="my_addr" oninput="saveAllData()" value="" placeholder="Address">
+                    <input type="text" class="inv-input" id="my_phone" oninput="saveAllData()" value="" placeholder="Phone">
+                    <input type="text" class="inv-input" id="my_email" oninput="saveAllData()" value="" placeholder="Email">
+                    <input type="text" class="inv-input" id="my_website" oninput="saveAllData()" value="" placeholder="Website">
                 </div>
             </div>
+
             <div class="invoice-title-block">
                 <div class="invoice-word">INVOICE</div>
             </div>
@@ -88,27 +87,34 @@
         <!-- Meta -->
         <div class="inv-meta">
             <div class="meta-left">
+                <div class="meta-label">Company</div>
+                <div class="client-select-row no-print" style="margin-bottom:12px;">
+                    <select class="client-select" id="company_picker" onchange="switchCompany(this.value)">
+                        <option value="">— Select a company —</option>
+                    </select>
+                </div>
+
                 <div class="meta-label">Billed To</div>
                 <div class="client-select-row no-print">
                     <select class="client-select" id="client_picker" onchange="fillClientFromPicker()">
                         <option value="">— Select a client —</option>
                     </select>
                 </div>
+
                 <textarea class="client-textarea" id="client_info" rows="3" oninput="saveAllData()" placeholder="Client name, address..."></textarea>
             </div>
+
             <div class="meta-right">
                 <div class="meta-label">Invoice Details</div>
+
                 <div class="meta-detail-row">
                     <label>Invoice #</label>
                     <input type="text" class="meta-text-input" id="inv_num" oninput="saveAllData()" value="">
                 </div>
+
                 <div class="meta-detail-row">
                     <label>Date</label>
                     <input type="text" class="meta-text-input" id="inv_date" oninput="saveAllData()" value="">
-                </div>
-                <div class="meta-detail-row">
-                    <label>Due Date</label>
-                    <input type="text" class="meta-text-input" id="inv_due" oninput="saveAllData()" placeholder="dd/mm/yyyy">
                 </div>
             </div>
         </div>
@@ -128,6 +134,7 @@
                     <!-- rows injected by JS -->
                 </tbody>
             </table>
+
             <button class="add-row-btn no-print" onclick="addItemRow()">
                 ➕ Add Row
             </button>
@@ -140,6 +147,7 @@
                     <span>Subtotal</span>
                     <span>€<span id="subtotal_display">0.00</span></span>
                 </div>
+
                 <div class="summary-line">
                     <div class="summary-vat-label">
                         VAT (
@@ -149,6 +157,7 @@
                     </div>
                     <span>€<span id="vat_amount">0.00</span></span>
                 </div>
+
                 <div class="summary-total">
                     <span>TOTAL</span>
                     <span>€<span id="grand_total">0.00</span></span>
@@ -160,18 +169,35 @@
         <div class="inv-footer-grid">
             <div class="footer-col">
                 <div class="footer-title">Bank Details</div>
-                <div class="bank-row"><strong>Recipient</strong><input type="text" class="bank-input" id="bank_recip" oninput="saveAllData()" value="D-BUILDER SIA"></div>
-                <div class="bank-row"><strong>Bank</strong><input type="text" class="bank-input" id="bank_name" oninput="saveAllData()" value="Revolut Bank UAB"></div>
-                <div class="bank-row"><strong>IBAN</strong><input type="text" class="bank-input" id="bank_iban" oninput="saveAllData()" value="LT68 3250 0118 6894 4162"></div>
-                <div class="bank-row"><strong>BIC</strong><input type="text" class="bank-input" id="bank_bic" oninput="saveAllData()" value="REVOLT21"></div>
+
+                <div class="bank-row">
+                    <strong>Recipient</strong>
+                    <input type="text" class="bank-input" id="bank_recip" oninput="saveAllData()" value="">
+                </div>
+
+                <div class="bank-row">
+                    <strong>Bank</strong>
+                    <input type="text" class="bank-input" id="bank_name" oninput="saveAllData()" value="">
+                </div>
+
+                <div class="bank-row">
+                    <strong>IBAN</strong>
+                    <input type="text" class="bank-input" id="bank_iban" oninput="saveAllData()" value="">
+                </div>
+
+                <div class="bank-row">
+                    <strong>BIC</strong>
+                    <input type="text" class="bank-input" id="bank_bic" oninput="saveAllData()" value="">
+                </div>
             </div>
+
             <div class="footer-col">
                 <div class="footer-title">Terms</div>
                 <p class="terms-text">Payment due within 7 days of invoice date.<br>Thank you for your business!</p>
             </div>
         </div>
 
-    </div><!-- /inv-card -->
+    </div>
 
     <!-- Action Buttons -->
     <div class="action-bar no-print">
@@ -182,7 +208,7 @@
         <button class="btn btn-danger" onclick="clearEverything()">🔄 Reset</button>
     </div>
 
-</div><!-- /page-invoice -->
+</div>
 
 <!-- HISTORY PAGE -->
 <div class="page" id="page-history">
@@ -193,6 +219,7 @@
         </div>
         <button class="btn btn-primary" onclick="showPage('invoice')">➕ New Invoice</button>
     </div>
+
     <div class="history-list" id="history-list">
         <div class="empty-state">
             <div class="empty-icon">🗂️</div>
@@ -210,10 +237,10 @@
         </div>
     </div>
 
-    <!-- Add Client Form -->
     <div class="client-add-form">
         <div class="form-title">➕ <span id="client-form-title">New Client</span></div>
         <input type="hidden" id="edit_client_id" value="">
+
         <div class="form-row">
             <div class="form-group">
                 <label class="form-label">Name / Company *</label>
@@ -224,12 +251,14 @@
                 <input type="text" class="form-input" id="new_client_reg" placeholder="Reg No / VAT No">
             </div>
         </div>
+
         <div class="form-row">
             <div class="form-group full">
                 <label class="form-label">Address</label>
                 <input type="text" class="form-input" id="new_client_addr" placeholder="Full address">
             </div>
         </div>
+
         <div class="form-row">
             <div class="form-group">
                 <label class="form-label">Email</label>
@@ -237,15 +266,17 @@
             </div>
             <div class="form-group">
                 <label class="form-label">Phone</label>
-                <input type="text" class="form-input" id="new_client_phone" placeholder="+371 ...">
+                <input type="text" class="form-input" id="new_client_phone" placeholder="+49 ...">
             </div>
         </div>
+
         <div class="form-row">
             <div class="form-group full">
                 <label class="form-label">Notes</label>
                 <textarea class="form-input" id="new_client_note" rows="2" placeholder="Additional info..."></textarea>
             </div>
         </div>
+
         <div style="display:flex; gap:10px;">
             <button class="btn btn-success" onclick="saveClient()">💾 Save</button>
             <button class="btn btn-danger" onclick="cancelClientEdit()" id="cancel-edit-btn" style="display:none;">✕ Cancel</button>
@@ -256,6 +287,109 @@
         <div class="empty-state" style="grid-column:span 2;">
             <div class="empty-icon">👤</div>
             <p>No clients yet</p>
+        </div>
+    </div>
+</div>
+
+<!-- COMPANIES PAGE -->
+<div class="page" id="page-companies">
+    <div class="page-header">
+        <div>
+            <div class="page-title">🏢 Companies</div>
+            <div class="page-subtitle">Manage your companies</div>
+        </div>
+    </div>
+
+    <div class="client-add-form">
+        <div class="form-title">🏢 <span id="company-form-title">New Company</span></div>
+        <input type="hidden" id="edit_company_id" value="">
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Company Name *</label>
+                <input type="text" class="form-input" id="new_company_name" placeholder="Company name">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Reg No / VAT No</label>
+                <input type="text" class="form-input" id="new_company_reg" placeholder="Reg No / VAT No">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group full">
+                <label class="form-label">Address</label>
+                <input type="text" class="form-input" id="new_company_addr" placeholder="Full address">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Phone</label>
+                <input type="text" class="form-input" id="new_company_phone" placeholder="+49 ...">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="text" class="form-input" id="new_company_email" placeholder="email@example.com">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group full">
+                <label class="form-label">Website</label>
+                <input type="text" class="form-input" id="new_company_website" placeholder="https://example.com">
+            </div>
+        </div>
+        
+        <div class="form-row">
+    <div class="form-group full">
+        <label class="form-label">Logo</label>
+        <select class="form-input" id="new_company_logo">
+       <option value="shared1">Shared Logo 1</option>
+       <option value="shared2">Shared Logo 2</option>
+    </select>
+        <div class="form-help" id="logo-help-text">
+           Shared logos are available for everyone. Your Logo requires unlock code.
+       </div>
+       <div style="margin-top:8px;" id="unlock-logo-wrap">
+    <button type="button" class="hist-btn" style="background:#eef2ff;color:#4c6ef5;" onclick="unlockYourLogoManually()">
+        🔓 Unlock Your Logo
+    </button>
+</div>
+    </div>
+</div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Bank Recipient</label>
+                <input type="text" class="form-input" id="new_company_bank_recip" placeholder="Recipient name">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Bank Name</label>
+                <input type="text" class="form-input" id="new_company_bank_name" placeholder="Bank name">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">IBAN</label>
+                <input type="text" class="form-input" id="new_company_bank_iban" placeholder="IBAN">
+            </div>
+            <div class="form-group">
+                <label class="form-label">BIC</label>
+                <input type="text" class="form-input" id="new_company_bank_bic" placeholder="BIC">
+            </div>
+        </div>
+
+        <div style="display:flex; gap:10px;">
+            <button class="btn btn-success" onclick="saveCompany()">💾 Save</button>
+            <button class="btn btn-danger" onclick="cancelCompanyEdit()" id="cancel-company-edit-btn" style="display:none;">✕ Cancel</button>
+        </div>
+    </div>
+
+    <div class="clients-grid" id="companies-grid">
+        <div class="empty-state" style="grid-column:span 2;">
+            <div class="empty-icon">🏢</div>
+            <p>No companies yet</p>
         </div>
     </div>
 </div>
@@ -275,10 +409,6 @@
     </div>
 </div>
 
-
-<script src="app.js"></script>
-
-
 <!-- iOS Install Banner -->
 <div class="ios-banner" id="ios-banner">
     <button class="ios-banner-close" onclick="dismissIOSBanner()">✕</button>
@@ -293,15 +423,18 @@
             </svg>
         </div>
         <div class="ios-banner-text">
-            <h4>D-BUILDER Invoice</h4>
+            <h4>Invoice</h4>
             <p>Install on your home screen and use offline!</p>
         </div>
     </div>
+
     <div class="ios-steps">
         <div class="ios-step">
             <div class="ios-step-icon">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0d3d7a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+                    <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/>
+                    <polyline points="16 6 12 2 8 6"/>
+                    <line x1="12" y1="2" x2="12" y2="15"/>
                 </svg>
             </div>
             <div>
@@ -309,6 +442,7 @@
                 <span>Bottom bar — square with arrow ⬆️</span>
             </div>
         </div>
+
         <div class="ios-step">
             <div class="ios-step-icon">➕</div>
             <div>
@@ -316,6 +450,7 @@
                 <span>Scroll down and tap it</span>
             </div>
         </div>
+
         <div class="ios-step">
             <div class="ios-step-icon">✅</div>
             <div>
@@ -335,5 +470,7 @@
     <button class="update-btn" onclick="applyUpdate()">Update now</button>
     <button class="update-dismiss" onclick="dismissUpdate()">✕</button>
 </div>
+
+<script src="app.js"></script>
 </body>
 </html>
