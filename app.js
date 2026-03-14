@@ -60,7 +60,7 @@ function createEmptyCompany() {
         bankName: '',
         bankIban: '',
         bankBic: '',
-        logoKey: 'neutral'
+        logoKey: 'shared1'
     };
 }
 
@@ -105,54 +105,6 @@ function ensureCurrentCompany() {
     if (!APP_DATA.currentInvoice.companyId) {
         APP_DATA.currentInvoice.companyId = APP_DATA.currentCompanyId;
     }
-}
-
-// =========================================
-// LOGO RENDER
-// =========================================
-function getLogoMarkup(logoKey) {
-    switch (logoKey) {
-        case 'shared2':
-            return `
-                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <rect x="6" y="6" width="88" height="88" rx="18" fill="#0d3d7a"/>
-                    <path d="M22 68 L40 30 L50 48 L60 26 L78 68 Z" fill="white"/>
-                    <circle cx="68" cy="30" r="7" fill="#ffc107"/>
-                </svg>
-            `;
-
-        case 'owner':
-            return `
-                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <rect x="6" y="6" width="88" height="88" rx="18" fill="#0d3d7a"/>
-                    <rect x="20" y="20" width="60" height="60" rx="14" fill="white"/>
-                    <path d="M34 62 V38 H47 C55 38 60 42 60 50 C60 58 55 62 47 62 Z" fill="#0d3d7a"/>
-                    <rect x="64" y="38" width="4" height="24" rx="2" fill="#ffc107"/>
-                </svg>
-            `;
-
-        case 'shared1':
-        default:
-            return `
-                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <rect x="6" y="6" width="88" height="88" rx="18" fill="#ffffff"/>
-                    <rect x="10" y="10" width="80" height="80" rx="16" fill="#0d3d7a"/>
-                    <circle cx="50" cy="34" r="10" fill="#ffc107"/>
-                    <rect x="28" y="50" width="44" height="8" rx="4" fill="white"/>
-                    <rect x="22" y="64" width="56" height="8" rx="4" fill="rgba(255,255,255,0.75)"/>
-                </svg>
-            `;
-    }
-}
-
-function renderCompanyLogo() {
-    const box = document.getElementById('company-logo-box');
-    if (!box) return;
-
-    const company = getCurrentCompany() || createEmptyCompany();
-    const logoKey = company.logoKey || 'shared1';
-
-    box.innerHTML = getLogoMarkup(logoKey);
 }
 
 // =========================================
@@ -591,11 +543,10 @@ function renderInvoiceForm() {
     renderItemRows();
     calculateAll();
 
-    const company = getCurrentCompany();
     const logo = document.getElementById('company-logo');
-
-    if (logo && company) {
-    logo.src = getLogoPath(company);
+    if (logo) {
+        logo.src = getLogoPath(co);
+    }
 }
 
 function renderItemRows() {
