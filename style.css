@@ -30,17 +30,18 @@ body {
 /* ===== TOP NAV ===== */
 
 .top-nav {
-    background: var(--primary);
-    padding: 0 10px;
+    background: linear-gradient(135deg, #0d3d7a 0%, #1a5cad 100%);
+    padding: 8px 12px;
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    min-height: 52px;
+    min-height: 66px;
     gap: 0;
     position: sticky;
     top: 0;
     z-index: 100;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 18px rgba(0,0,0,0.18);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
 .nav-logo {
@@ -63,56 +64,67 @@ body {
 .top-nav-right {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     width: 100%;
     min-width: 0;
 }
 
 .nav-tabs {
     display: flex;
-    gap: 4px;
+    gap: 6px;
     flex-wrap: nowrap;
+    flex-shrink: 1;
+    min-width: 0;
 }
 
 .nav-tab {
-    background: transparent;
-    border: none;
-    color: rgba(255,255,255,0.72);
-    padding: 8px 10px;
-    border-radius: 8px;
-    font-size: 12px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.10);
+    color: rgba(255,255,255,0.82);
+    padding: 10px 12px;
+    min-width: 44px;
+    min-height: 44px;
+    border-radius: 12px;
+    font-size: 15px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.22s ease;
     font-family: 'DM Sans', sans-serif;
     display: flex;
     align-items: center;
-    gap: 5px;
+    justify-content: center;
+    gap: 6px;
     white-space: nowrap;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
 }
 
 .nav-tab:hover {
-    background: rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.16);
     color: white;
+    transform: translateY(-1px);
 }
 
 .nav-tab.active {
-    background: rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.22);
     color: white;
+    border-color: rgba(255,255,255,0.24);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,0.10);
 }
 
 .lang-toggle {
-    background: rgba(255,255,255,0.15);
-    border: 1.5px solid rgba(255,255,255,0.35);
+    background: rgba(255,255,255,0.14);
+    border: 1.5px solid rgba(255,255,255,0.30);
     color: white;
-    border-radius: 20px;
-    padding: 6px 14px;
-    font-size: 13px;
-    font-weight: 600;
+    border-radius: 18px;
+    padding: 9px 14px;
+    min-height: 44px;
+    font-size: 14px;
+    font-weight: 700;
     cursor: pointer;
     font-family: 'DM Sans', sans-serif;
-    transition: all 0.2s;
+    transition: all 0.22s ease;
     white-space: nowrap;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
 }
 
 .lang-toggle:hover {
@@ -120,24 +132,26 @@ body {
 }
 
 .nav-company-select {
-    background: rgba(255,255,255,0.15);
-    border: 1.5px solid rgba(255,255,255,0.4);
+    background: rgba(255,255,255,0.14);
+    border: 1.5px solid rgba(255,255,255,0.32);
     color: white;
-    border-radius: 20px;
-    padding: 6px 14px;
-    font-size: 13px;
+    border-radius: 18px;
+    padding: 10px 16px;
+    min-height: 46px;
+    font-size: 15px;
     font-weight: 700;
     cursor: pointer;
     font-family: 'DM Sans', sans-serif;
     flex: 1;
     min-width: 0;
-    max-width: 200px;
+    max-width: 220px;
     appearance: none;
     -webkit-appearance: none;
     outline: none;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
 }
 
 .nav-company-select option {
@@ -1223,9 +1237,10 @@ textarea.form-input {
 
 @media (max-width: 640px) {
     .top-nav {
-        padding: 8px 8px;
-        align-items: center;
-    }
+    padding: 8px 10px;
+    align-items: center;
+    min-height: 64px;
+}
 
     .top-nav-right {
         gap: 6px;
@@ -1241,9 +1256,22 @@ textarea.form-input {
         height: 22px;
     }
 
-    .nav-tab span {
-        display: none;
-    }
+    .nav-tab {
+    padding: 9px;
+    min-width: 40px;
+    width: 40px;
+    min-height: 40px;
+    font-size: 18px;
+    line-height: 1;
+    border-radius: 12px;
+    justify-content: center;
+    align-items: center;
+    gap: 0;
+}
+
+.nav-tab span:last-child {
+    display: none !important;
+}
 
     .nav-tab {
         padding: 8px 8px;
@@ -1251,9 +1279,24 @@ textarea.form-input {
     }
 
     .lang-toggle {
-        padding: 6px 10px;
-        font-size: 12px;
-    }
+    padding: 8px 10px;
+    min-height: 42px;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+ .nav-company-select {
+    flex: 1;
+    max-width: 140px;
+    min-width: 0;
+    min-height: 42px;
+    padding: 8px 12px;
+    font-size: 14px;
+}
+
+.nav-tab span {
+    display: none !important;
+}
 
     .inv-header {
         grid-template-columns: 1fr auto;

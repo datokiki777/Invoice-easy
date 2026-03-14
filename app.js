@@ -88,6 +88,22 @@ function createEmptyCompany() {
     };
 }
 
+function createEmptyCompanyData() {
+    return {
+        invoices: [],
+        clients: [],
+        currentInvoice: {
+            num: '',
+            date: getCurrentDate(),
+            client: '',
+            clientId: '',
+            vatRate: 21,
+            vatText: '',
+            items: [{ desc: '', qty: 1, price: 0 }]
+        }
+    };
+}
+
 function getCurrentCompany() {
     if (!APP_DATA.companies || APP_DATA.companies.length === 0) return null;
 
@@ -320,29 +336,35 @@ function getCompanyStorageKey(id) {
 }
 
 function loadCompanyData(id) {
-    if (!id) return;
+    if (!id) {
+        COMPANY_DATA = createEmptyCompanyData();
+        COMPANY_DATA.currentInvoice.num = new Date().getFullYear() + '-001';
+        return;
+    }
+
     const raw = localStorage.getItem(getCompanyStorageKey(id));
+
     if (raw) {
         try {
             const parsed = JSON.parse(raw);
-            COMPANY_DATA.invoices = Array.isArray(parsed.invoices) ? parsed.invoices : [];
-            COMPANY_DATA.clients = Array.isArray(parsed.clients) ? parsed.clients : [];
-            COMPANY_DATA.currentInvoice = parsed.currentInvoice || null;
-        } catch(e) {
-            COMPANY_DATA.invoices = [];
-            COMPANY_DATA.clients = [];
-            COMPANY_DATA.currentInvoice = null;
+            COMPANY_DATA = {
+                invoices: Array.isArray(parsed.invoices) ? parsed.invoices : [],
+                clients: Array.isArray(parsed.clients) ? parsed.clients : [],
+                currentInvoice: parsed.currentInvoice || null
+            };
+        } catch (e) {
+            COMPANY_DATA = createEmptyCompanyData();
         }
     } else {
-        COMPANY_DATA.invoices = [];
-        COMPANY_DATA.clients = [];
-        COMPANY_DATA.currentInvoice = null;
+        COMPANY_DATA = createEmptyCompanyData();
     }
 
-    // Ensure valid currentInvoice
-    if (!COMPANY_DATA.currentInvoice ||
+    if (
+        !COMPANY_DATA.currentInvoice ||
         !COMPANY_DATA.currentInvoice.num ||
-        !Array.isArray(COMPANY_DATA.currentInvoice.items)) {
+        !Array.isArray(COMPANY_DATA.currentInvoice.items) ||
+        COMPANY_DATA.currentInvoice.items.length === 0
+    ) {
         COMPANY_DATA.currentInvoice = {
             num: generateInvoiceNumber(),
             date: getCurrentDate(),
@@ -589,33 +611,11 @@ function initPWA() {
 // =========================================
 window.onload = function () {
     loadAppData();
+    ensureCurrentCompany();
 
     const todayStatus = document.getElementById('today_status');
     if (todayStatus) {
         todayStatus.innerText = '📅 ' + getCurrentDate();
-    }
-
-
-    if (!COMPANY_DATA.currentInvoice) {
-        COMPANY_DATA.currentInvoice = {
-            num: '',
-            date: '',
-            client: '',
-            clientId: '',
-            vatRate: 21,
-            vatText: '',
-            items: [{ desc: '', qty: 1, price: 0 }]
-        };
-    }
-
-    if (!COMPANY_DATA.currentInvoice.num || COMPANY_DATA.currentInvoice.num.trim() === '') {
-        COMPANY_DATA.currentInvoice.num = generateInvoiceNumber();
-    }
-    if (!COMPANY_DATA.currentInvoice.date || COMPANY_DATA.currentInvoice.date.trim() === '') {
-        COMPANY_DATA.currentInvoice.date = getCurrentDate();
-    }
-    if (!COMPANY_DATA.currentInvoice.items || COMPANY_DATA.currentInvoice.items.length === 0) {
-        COMPANY_DATA.currentInvoice.items = [{ desc: '', qty: 1, price: 0 }];
     }
 
     // If no companies yet — go straight to Companies page
@@ -832,18 +832,18 @@ function calculateAll() {
 
 function saveAllData() {
     const company = getCurrentCompany();
-    if (company) {
-        company.name = document.getElementById('my_comp_name').value;
-        company.reg = document.getElementById('my_reg_no').value;
-        company.addr = document.getElementById('my_addr').value;
-        company.phone = document.getElementById('my_phone').value;
-        company.email = document.getElementById('my_email').value;
-        company.website = document.getElementById('my_website').value;
-        company.bankRecip = document.getElementById('bank_recip').value;
-        company.bankName = document.getElementById('bank_name').value;
-        company.bankIban = document.getElementById('bank_iban').value;
-        company.bankBic = document.getElementById('bank_bic').value;
-    }
+    if (!company) return;
+
+    company.name = document.getElementById('my_comp_name').value;
+    company.reg = document.getElementById('my_reg_no').value;
+    company.addr = document.getElementById('my_addr').value;
+    company.phone = document.getElementById('my_phone').value;
+    company.email = document.getElementById('my_email').value;
+    company.website = document.getElementById('my_website').value;
+    company.bankRecip = document.getElementById('bank_recip').value;
+    company.bankName = document.getElementById('bank_name').value;
+    company.bankIban = document.getElementById('bank_iban').value;
+    company.bankBic = document.getElementById('bank_bic').value;
 
     COMPANY_DATA.currentInvoice.num = document.getElementById('inv_num').value;
     COMPANY_DATA.currentInvoice.date = document.getElementById('inv_date').value;
@@ -851,8 +851,8 @@ function saveAllData() {
     COMPANY_DATA.currentInvoice.vatRate = parseFloat(document.getElementById('vat_rate').value) || 0;
     COMPANY_DATA.currentInvoice.vatText = document.getElementById('vat_text').value;
 
-    saveAppData();
     calculateAll();
+    saveAppData();
 }
 
 // =========================================
@@ -970,17 +970,30 @@ function newInvoice() {
 }
 
 function clearEverything() {
-    confirmAction('Reset Everything', 'All data will be cleared. Are you sure?', () => {
-        localStorage.removeItem('invoice_app_v1');
-        localStorage.removeItem('invoice_global_v2');
-        localStorage.removeItem('dbuilder_v2');
-        Object.keys(localStorage).forEach(key => {
-            if (key.startsWith('invoice_co_')) {
-                localStorage.removeItem(key);
-            }
-        });
-        location.reload();
-    });
+    const company = getCurrentCompany();
+
+    if (!company || !APP_DATA.currentCompanyId) {
+        showToast('⚠️ No company selected');
+        return;
+    }
+
+    confirmAction(
+        'Reset Current Company Data',
+        `Clear all invoices, clients and current invoice for "${company.name}"? Company profile will stay saved.`,
+        () => {
+            COMPANY_DATA = createEmptyCompanyData();
+            COMPANY_DATA.currentInvoice.num = new Date().getFullYear() + '-001';
+
+            saveCompanyData();
+            renderInvoiceForm();
+            renderHistory();
+            renderClients();
+            refreshClientPicker();
+            showPage('invoice');
+
+            showToast('🧹 Current company data cleared');
+        }
+    );
 }
 
 // =========================================
@@ -1196,23 +1209,12 @@ function saveCompany() {
     const previousCompanyId = APP_DATA.currentCompanyId;
 
     if (!editId) {
-        // New company: save current company's data first, then reset COMPANY_DATA
+        saveAllData();
         saveCompanyData();
+
         APP_DATA.currentCompanyId = company.id;
-        COMPANY_DATA = {
-            invoices: [],
-            clients: [],
-            currentInvoice: {
-                num: '',
-                date: getCurrentDate(),
-                client: '',
-                clientId: '',
-                vatRate: 21,
-                vatText: '',
-                items: [{ desc: '', qty: 1, price: 0 }]
-            }
-        };
-        COMPANY_DATA.currentInvoice.num = generateInvoiceNumber();
+        COMPANY_DATA = createEmptyCompanyData();
+        COMPANY_DATA.currentInvoice.num = new Date().getFullYear() + '-001';
     } else if (editId !== previousCompanyId) {
         // Editing a different (non-active) company:
         // save current active company's data first, then load the edited company's data
@@ -1226,12 +1228,15 @@ function saveCompany() {
 
     saveAppData();
     clearCompanyForm();
-    renderCompanies();
     refreshNavCompanyPicker();
+    renderCompanies();
     renderInvoiceForm();
     renderClients();
     refreshClientPicker();
+    renderHistory();
     refreshOwnerLogoOptionText();
+    currentLang = company.lang || 'en';
+    applyLang();
 
     if (isFirstCompany) {
         showPage('invoice');
@@ -1245,52 +1250,50 @@ function renderCompanies() {
     const grid = document.getElementById('companies-grid');
     if (!grid) return;
 
-    if (!APP_DATA.companies || APP_DATA.companies.length === 0) {
+    const currentCompany = getCurrentCompany();
+
+    if (!currentCompany) {
         grid.innerHTML = `
             <div class="empty-state" style="grid-column:span 2;">
                 <div class="empty-icon">🏢</div>
-                <p>No companies yet</p>
+                <p>No company selected</p>
             </div>
         `;
         return;
     }
 
-    grid.innerHTML = APP_DATA.companies.map(c => {
-        const isCurrent = c.id === APP_DATA.currentCompanyId;
-
-        return `
-                <div class="client-card ${isCurrent ? 'current-company-card' : ''}">
-                <div class="client-name">${esc(c.name || 'Untitled Company')}</div>
-                <div style="font-size:12px;color:#718096;margin-bottom:6px;">
-                      ${c.logoKey === 'owner'
-                  ? (isOwnerLogoUnlocked() ? 'Logo: 🔓 Your Logo' : 'Logo: 🔒 Your Logo')
-                  : c.logoKey === 'shared2'
-                  ? 'Logo: Shared Logo 2'
-                  : 'Logo: Shared Logo 1'}
-                </div>
-                <div class="client-detail">${[
-                    c.reg,
-                    c.addr,
-                    c.phone,
-                    c.email,
-                    c.website
-                ].filter(Boolean).map(esc).join('\n')}</div>
-
-                <div style="font-size:12px;color:#a0aec0;margin-top:8px;white-space:pre-wrap;">${[
-                    c.bankRecip ? 'Recipient: ' + esc(c.bankRecip) : '',
-                    c.bankName ? 'Bank: ' + esc(c.bankName) : '',
-                    c.bankIban ? 'IBAN: ' + esc(c.bankIban) : '',
-                    c.bankBic ? 'BIC: ' + esc(c.bankBic) : ''
-                ].filter(Boolean).join('\n')}</div>
-
-                <div class="client-card-actions">
-                    <button class="hist-btn hist-btn-load" onclick="switchCompany('${c.id}')">🏢 Use</button>
-                    <button class="hist-btn" style="background:#eef2ff;color:#4c6ef5;" onclick="editCompany('${c.id}')">✏️ Edit</button>
-                    <button class="hist-btn hist-btn-del" onclick="deleteCompany('${c.id}')">🗑️</button>
-                </div>
+    grid.innerHTML = `
+        <div class="client-card current-company-card">
+            <div class="client-name">${esc(currentCompany.name || 'Untitled Company')}</div>
+            <div style="font-size:12px;color:#718096;margin-bottom:6px;">
+                ${currentCompany.logoKey === 'owner'
+                    ? (isOwnerLogoUnlocked() ? 'Logo: 🔓 Your Logo' : 'Logo: 🔒 Your Logo')
+                    : currentCompany.logoKey === 'shared2'
+                    ? 'Logo: Shared Logo 2'
+                    : 'Logo: Shared Logo 1'}
             </div>
-        `;
-    }).join('');
+
+            <div class="client-detail">${[
+                currentCompany.reg,
+                currentCompany.addr,
+                currentCompany.phone,
+                currentCompany.email,
+                currentCompany.website
+            ].filter(Boolean).map(esc).join('\n')}</div>
+
+            <div style="font-size:12px;color:#a0aec0;margin-top:8px;white-space:pre-wrap;">${[
+                currentCompany.bankRecip ? 'Recipient: ' + esc(currentCompany.bankRecip) : '',
+                currentCompany.bankName ? 'Bank: ' + esc(currentCompany.bankName) : '',
+                currentCompany.bankIban ? 'IBAN: ' + esc(currentCompany.bankIban) : '',
+                currentCompany.bankBic ? 'BIC: ' + esc(currentCompany.bankBic) : ''
+            ].filter(Boolean).join('\n')}</div>
+
+            <div class="client-card-actions">
+                <button class="hist-btn" style="background:#eef2ff;color:#4c6ef5;" onclick="editCompany('${currentCompany.id}')">✏️ Edit</button>
+                <button class="hist-btn hist-btn-del" onclick="deleteCompany('${currentCompany.id}')">🗑️ Delete</button>
+            </div>
+        </div>
+    `;
 }
 
 function editCompany(id) {
@@ -1368,19 +1371,8 @@ function deleteCompany(id) {
                 const newCo = getCurrentCompany();
                 currentLang = newCo?.lang || 'en';
             } else {
-                COMPANY_DATA = {
-                    invoices: [],
-                    clients: [],
-                    currentInvoice: {
-                        num: '',
-                        date: '',
-                        client: '',
-                        clientId: '',
-                        vatRate: 21,
-                        vatText: '',
-                        items: [{ desc: '', qty: 1, price: 0 }]
-                    }
-                };
+                COMPANY_DATA = createEmptyCompanyData();
+                COMPANY_DATA.currentInvoice.num = new Date().getFullYear() + '-001';
             }
         } else {
             // Just remove storage for deleted company
@@ -1394,6 +1386,7 @@ function deleteCompany(id) {
         renderClients();
         refreshClientPicker();
         renderHistory();
+        applyLang();
 
         showToast('🗑️ Company deleted');
     });
@@ -1405,25 +1398,27 @@ function switchCompany(id) {
     const company = APP_DATA.companies.find(c => c.id === id);
     if (!company) return;
 
-    // Save current company data (including any unsaved form changes)
+    // Save current active company data before switch
     saveAllData();
+    saveCompanyData();
 
-    // Switch
+    // Switch active company
     APP_DATA.currentCompanyId = id;
     saveGlobalData();
 
-    // Load new company's data
+    // Load selected company data
     loadCompanyData(id);
 
-    // Apply this company's language
+    // Apply selected company's language
     currentLang = company.lang || 'en';
 
-    // Refresh everything
+    // Refresh whole UI from selected company
     refreshNavCompanyPicker();
     renderInvoiceForm();
     renderClients();
     refreshClientPicker();
     renderHistory();
+    renderCompanies();
     applyLang();
     showPage('invoice');
 
