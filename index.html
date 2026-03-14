@@ -11,26 +11,17 @@
     <link rel="apple-touch-icon" href="icons/icon-192.png">
     <title>Invoice</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <!-- TOP NAV -->
 <nav class="top-nav">
-    <div class="nav-logo">
-        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <rect x="2" y="2" width="96" height="96" rx="18" fill="rgba(255,255,255,0.15)"/>
-            <rect x="6" y="6" width="88" height="88" rx="15" fill="#0d3d7a"/>
-            <path d="M25 35 L50 20 L75 35 L50 50 Z" fill="white"/>
-            <path d="M25 50 L50 65 L75 50 L50 35 Z" fill="rgba(255,255,255,0.7)"/>
-            <path d="M25 65 L50 80 L75 65 L50 50 Z" fill="white"/>
-            <circle cx="50" cy="50" r="6" fill="#0d3d7a"/>
-        </svg>
-        Invoice
-    </div>
+    <div class="top-nav-right" style="width:100%">
+        <select class="nav-company-select" id="nav_company_picker" onchange="switchCompany(this.value)" title="Active company">
+            <option value="">— Company —</option>
+        </select>
 
-      <div class="top-nav-right">
         <button class="lang-toggle" id="lang-toggle" onclick="toggleLang()" title="Switch invoice language">🇬🇧 EN</button>
 
         <div class="nav-tabs">
@@ -67,9 +58,9 @@
         <!-- Header -->
         <div class="inv-header">
             <div class="company-block">
-                <div class="logo-svg">
-               <img id="company-logo" src="" alt="Company logo">
-              </div>
+                <div class="logo-svg" id="logo-wrap">
+                    <img id="company-logo" src="" alt="Logo" onerror="document.getElementById('logo-wrap').innerHTML='<svg viewBox=\'0 0 100 100\' xmlns=\'http://www.w3.org/2000/svg\'><rect x=\'6\' y=\'6\' width=\'88\' height=\'88\' rx=\'15\' fill=\'rgba(255,255,255,0.15)\'/><path d=\'M25 35 L50 20 L75 35 L50 50 Z\' fill=\'white\'/><path d=\'M25 50 L50 65 L75 50 L50 35 Z\' fill=\'rgba(255,255,255,0.7)\'/><path d=\'M25 65 L50 80 L75 65 L50 50 Z\' fill=\'white\'/><circle cx=\'50\' cy=\'50\' r=\'6\' fill=\'rgba(255,255,255,0.4)\'/></svg>'">
+                </div>
 
                 <div class="company-fields">
                     <input type="text" class="inv-input company-name" id="my_comp_name" oninput="saveAllData()" value="" placeholder="Company name">
@@ -89,13 +80,6 @@
         <!-- Meta -->
         <div class="inv-meta">
             <div class="meta-left">
-                <div class="meta-label">Company</div>
-                <div class="client-select-row no-print" style="margin-bottom:12px;">
-                    <select class="client-select" id="company_picker" onchange="switchCompany(this.value)">
-                        <option value="">— Select a company —</option>
-                    </select>
-                </div>
-
                 <div class="meta-label">Billed To</div>
                 <div class="client-select-row no-print">
                     <select class="client-select" id="client_picker" onchange="fillClientFromPicker()">
@@ -203,7 +187,6 @@
 
     <!-- Action Buttons -->
     <div class="action-bar no-print">
-        <button class="btn btn-pdf" onclick="exportPDF()">📥 Export PDF</button>
         <button class="btn btn-primary" onclick="window.print()">🖨️ Print</button>
         <button class="btn btn-success" onclick="saveInvoiceToHistory()">💾 Save</button>
         <button class="btn btn-warning" onclick="newInvoice()">➕ New</button>
