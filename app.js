@@ -632,6 +632,12 @@ function renderInvoiceForm() {
     if (logo) {
         logo.src = getLogoPath(co);
     }
+
+    // Restore client picker to saved selection
+    if (ci.clientId) {
+        const picker = document.getElementById('client_picker');
+        if (picker) picker.value = ci.clientId;
+    }
 }
 
 function renderItemRows() {
@@ -855,6 +861,7 @@ function newInvoice() {
             num: generateInvoiceNumber(),
             date: getCurrentDate(),
             client: '',
+            clientId: '',
             vatRate: 21,
             vatText: '',
             items: [{ desc: '', qty: 1, price: 0 }]
@@ -968,6 +975,7 @@ function useClientForInvoice(id) {
     if (c.phone) info += '\n' + c.phone;
 
     APP_DATA.currentInvoice.client = info;
+    APP_DATA.currentInvoice.clientId = id;
     document.getElementById('client_info').value = info;
     saveAppData();
     showPage('invoice');
@@ -999,6 +1007,7 @@ function renderClients() {
 
 function refreshClientPicker() {
     const sel = document.getElementById('client_picker');
+    if (!sel) return;
     sel.innerHTML = '<option value="">— Select a client —</option>';
 
     const companyClients = (APP_DATA.clients || []).filter(c => c.companyId === APP_DATA.currentCompanyId);
@@ -1007,17 +1016,24 @@ function refreshClientPicker() {
         const opt = document.createElement('option');
         opt.value = c.id;
         opt.textContent = c.name;
+        if (APP_DATA.currentInvoice.clientId && APP_DATA.currentInvoice.clientId === c.id) {
+            opt.selected = true;
+        }
         sel.appendChild(opt);
     });
 }
 
 function fillClientFromPicker() {
     const id = document.getElementById('client_picker').value;
-    if (!id) return;
-
+    if (!id) {
+        APP_DATA.currentInvoice.client = '';
+        APP_DATA.currentInvoice.clientId = '';
+        document.getElementById('client_info').value = '';
+        saveAppData();
+        return;
+    }
     useClientForInvoice(id);
-    document.getElementById('client_picker').value = '';
-    showPage('invoice');
+    // Keep picker showing selected name — do NOT reset to ''
 }
 
   // =========================================
@@ -1259,74 +1275,93 @@ function buildPDFFromInvoice(inv) {
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
     const W = 210;
     const H = 297;
-    const margin = 15;
-
+    const margin = 14;
     const L = LANG[currentLang] || LANG.en;
     const co = APP_DATA.companies.find(c => c.id === inv.companyId) || getCurrentCompany() || createEmptyCompany();
 
+    // ── HEADER BACKGROUND ──
     doc.setFillColor(13, 61, 122);
-    doc.roundedRect(0, 0, W, 48, 0, 0, 'F');
+    doc.rect(0, 0, W, 54, 'F');
 
+    // Company name
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(18);
-    doc.text(co.name || '', margin, 16);
+    doc.text(co.name || '', margin, 14);
 
-    doc.setFontSize(8);
+    // Company info (reg | addr | phone | email | website) — wrapped if needed
+    const infoLine = [co.reg, co.addr, co.phone, co.email, co.website].filter(Boolean).join('  |  ');
+    doc.setFontSize(7.5);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(200, 220, 255);
-    doc.text(
-        [co.reg, co.addr, co.phone, co.email, co.website].filter(Boolean).join('  |  '),
-        margin,
-        22,
-        { maxWidth: 130 }
-    );
+    doc.setTextColor(180, 210, 255);
+    if (infoLine) {
+        const infoWrapped = doc.splitTextToSize(infoLine, 130);
+        doc.text(infoWrapped, margin, 21);
+    }
 
+    // INVOICE word (top right)
     doc.setFontSize(30);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(255, 255, 255);
-    doc.text(L.invoiceWord, W - margin, 20, { align: 'right' });
+    doc.text(L.invoiceWord, W - margin, 22, { align: 'right' });
 
+    // Invoice # and Date under INVOICE word
+    doc.setFontSize(8.5);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(200, 225, 255);
+    doc.text(`${L.invoiceNum}  ${inv.num || ''}`, W - margin, 31, { align: 'right' });
+    doc.text(`${L.date}:  ${inv.date || ''}`, W - margin, 38, { align: 'right' });
+
+    // ── BILLED TO + INVOICE DETAILS (two columns) ──
+    const boxY = 58;
+    const colW = (W - margin * 2) / 2 - 3;
+
+    // LEFT — Billed To
     doc.setFillColor(245, 248, 255);
-    doc.roundedRect(margin, 52, W - margin * 2, 28, 4, 4, 'F');
-
+    doc.roundedRect(margin, boxY, colW, 34, 3, 3, 'F');
     doc.setTextColor(13, 61, 122);
-    doc.setFontSize(9);
+    doc.setFontSize(7.5);
     doc.setFont('helvetica', 'bold');
-    doc.text(L.billedTo.toUpperCase(), margin + 4, 59);
-
+    doc.text(L.billedTo.toUpperCase(), margin + 4, boxY + 6);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(30, 30, 30);
-    doc.setFontSize(9);
+    doc.setTextColor(20, 20, 20);
+    doc.setFontSize(8.5);
+    const clientLines = (inv.client || '').split('\n').filter(Boolean).slice(0, 6);
+    if (clientLines.length) {
+        doc.text(clientLines, margin + 4, boxY + 12, { lineHeightFactor: 1.5 });
+    }
 
-    const clientLines = (inv.client || '').split('\n').slice(0, 4);
-    doc.text(clientLines, margin + 4, 64);
-
-    doc.setFont('helvetica', 'bold');
+    // RIGHT — Invoice Details
+    const rightX = margin + colW + 6;
+    const rightW = W - margin - rightX;
+    doc.setFillColor(245, 248, 255);
+    doc.roundedRect(rightX, boxY, rightW, 34, 3, 3, 'F');
     doc.setTextColor(13, 61, 122);
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'bold');
+    doc.text(L.invoiceDetails ? L.invoiceDetails.toUpperCase() : 'INVOICE DETAILS', rightX + 4, boxY + 6);
     doc.setFontSize(9);
-    doc.text(L.invoiceNum, W / 2 + 10, 59);
-    doc.text(L.date, W / 2 + 10, 65);
-
+    doc.text(L.invoiceNum, rightX + 4, boxY + 15);
+    doc.text(L.date, rightX + 4, boxY + 23);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(30, 30, 30);
-    doc.text(inv.num || '', W - margin, 59, { align: 'right' });
-    doc.text(inv.date || '', W - margin, 65, { align: 'right' });
+    doc.setTextColor(20, 20, 20);
+    doc.text(inv.num || '', rightX + rightW - 4, boxY + 15, { align: 'right' });
+    doc.text(inv.date || '', rightX + rightW - 4, boxY + 23, { align: 'right' });
 
-    let y = 86;
+    // ── ITEMS TABLE ──
+    let y = boxY + 40;
 
     doc.setFillColor(13, 61, 122);
-    doc.rect(margin, y, W - margin * 2, 8, 'F');
+    doc.rect(margin, y, W - margin * 2, 9, 'F');
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(8.5);
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
-    doc.text(L.description.toUpperCase(), margin + 3, y + 5.5);
-    doc.text(L.qty.toUpperCase(), 125, y + 5.5, { align: 'center' });
-    doc.text(L.unitPrice.toUpperCase(), 155, y + 5.5, { align: 'center' });
-    doc.text(L.amount.toUpperCase(), W - margin - 2, y + 5.5, { align: 'right' });
+    doc.text(L.description.toUpperCase(), margin + 4, y + 6);
+    doc.text(L.qty.toUpperCase(), 127, y + 6, { align: 'center' });
+    doc.text(L.unitPrice.toUpperCase(), 158, y + 6, { align: 'center' });
+    doc.text(L.amount.toUpperCase(), W - margin - 2, y + 6, { align: 'right' });
 
-    y += 8;
-    doc.setTextColor(30, 30, 30);
+    y += 9;
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
 
@@ -1341,97 +1376,96 @@ function buildPDFFromInvoice(inv) {
 
         if (i % 2 === 0) {
             doc.setFillColor(248, 250, 254);
-            doc.rect(margin, y, W - margin * 2, 8, 'F');
+            doc.rect(margin, y, W - margin * 2, 9, 'F');
         }
 
         doc.setTextColor(30, 30, 30);
-        const descText = doc.splitTextToSize(item.desc || '', 90);
-        doc.text(descText[0] || '', margin + 3, y + 5.5);
-        doc.text(q.toString(), 125, y + 5.5, { align: 'center' });
-        doc.text('€' + p.toFixed(2), 155, y + 5.5, { align: 'center' });
+        const descLines = doc.splitTextToSize(item.desc || '', 96);
+        doc.text(descLines[0] || '', margin + 4, y + 6);
+        doc.text(String(q % 1 === 0 ? q : q.toFixed(2)), 127, y + 6, { align: 'center' });
+        doc.text('€' + p.toFixed(2), 158, y + 6, { align: 'center' });
 
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(13, 61, 122);
-        doc.text('€' + t.toFixed(2), W - margin - 2, y + 5.5, { align: 'right' });
-
+        doc.text('€' + t.toFixed(2), W - margin - 2, y + 6, { align: 'right' });
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(30, 30, 30);
-        y += 8;
+        y += 9;
     });
 
-    y += 4;
+    y += 5;
 
-    const vatRate = parseFloat(inv.vatRate) || 0;
-    const vat = subtotal * (vatRate / 100);
-    const total = subtotal + vat;
-
-    const sW = 80;
+    // ── SUMMARY ──
+    const sW = 88;
     const sX = W - margin - sW;
 
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(100, 100, 100);
+    doc.setTextColor(110, 110, 110);
     doc.text(L.subtotal, sX, y + 5);
     doc.text('€' + subtotal.toFixed(2), W - margin, y + 5, { align: 'right' });
+    y += 8;
 
-    y += 7;
-
+    const vatRate = parseFloat(inv.vatRate) || 0;
+    const vat = subtotal * (vatRate / 100);
+    const total = subtotal + vat;
     const vatLabel = L.vatLabel(vatRate) + (inv.vatText ? ' ' + inv.vatText : '');
     doc.text(vatLabel, sX, y + 5);
     doc.text('€' + vat.toFixed(2), W - margin, y + 5, { align: 'right' });
-
-    y += 4;
+    y += 6;
 
     doc.setFillColor(255, 193, 7);
-    doc.roundedRect(sX - 2, y, sW + margin + 2, 12, 3, 3, 'F');
+    doc.roundedRect(sX - 3, y, sW + margin + 3, 13, 3, 3, 'F');
     doc.setTextColor(13, 61, 122);
     doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
-    doc.text(L.total, sX + 2, y + 8.5);
-    doc.text('€' + total.toFixed(2), W - margin - 2, y + 8.5, { align: 'right' });
+    doc.text(L.total, sX + 2, y + 9);
+    doc.text('€' + total.toFixed(2), W - margin - 2, y + 9, { align: 'right' });
 
-    y += 18;
+    y += 20;
+
+    // ── BANK + TERMS ──
+    const footW = (W - margin * 2) / 2 - 3;
 
     doc.setFillColor(245, 248, 255);
-    doc.roundedRect(margin, y, (W - margin * 2) / 2 - 5, 32, 3, 3, 'F');
+    doc.roundedRect(margin, y, footW, 38, 3, 3, 'F');
     doc.setTextColor(13, 61, 122);
-    doc.setFontSize(8.5);
+    doc.setFontSize(7.5);
     doc.setFont('helvetica', 'bold');
-    doc.text(L.bankDetails.toUpperCase(), margin + 4, y + 6);
-
+    doc.text(L.bankDetails.toUpperCase(), margin + 4, y + 7);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(50, 50, 50);
-
+    doc.setTextColor(40, 40, 40);
+    doc.setFontSize(8.5);
     const bankLines = [
         `${L.recipient}: ${co.bankRecip || ''}`,
         `${L.bank}: ${co.bankName || ''}`,
         `IBAN: ${co.bankIban || ''}`,
         `BIC: ${co.bankBic || ''}`
     ];
+    doc.text(bankLines, margin + 4, y + 14, { lineHeightFactor: 1.6 });
 
-    doc.text(bankLines, margin + 4, y + 12, { lineHeightFactor: 1.5 });
-
-    const tX = W / 2 + 2;
+    const tX = margin + footW + 6;
+    const tW = W - margin - tX;
     doc.setFillColor(245, 248, 255);
-    doc.roundedRect(tX, y, W - margin - tX, 32, 3, 3, 'F');
+    doc.roundedRect(tX, y, tW, 38, 3, 3, 'F');
     doc.setTextColor(13, 61, 122);
+    doc.setFontSize(7.5);
     doc.setFont('helvetica', 'bold');
-    doc.text(L.terms.toUpperCase(), tX + 4, y + 6);
-
+    doc.text(L.terms.toUpperCase(), tX + 4, y + 7);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(100, 100, 100);
-    doc.text(L.termsText.replace('\\n', '\n'), tX + 4, y + 12, {
+    doc.setFontSize(8.5);
+    doc.text(L.termsText.replace('\\n', '\n'), tX + 4, y + 14, {
         lineHeightFactor: 1.6,
-        maxWidth: W - margin - tX - 4
+        maxWidth: tW - 8
     });
 
-    doc.setFontSize(8);
-    doc.setTextColor(150, 150, 150);
+    // ── FOOTER ──
+    doc.setFontSize(7.5);
+    doc.setTextColor(160, 160, 160);
     doc.text(
-        [co.name, co.email, co.phone, co.website].filter(Boolean).join(' | '),
-        W / 2,
-        H - 8,
-        { align: 'center' }
+        [co.name, co.email, co.phone, co.website].filter(Boolean).join('  |  '),
+        W / 2, H - 8, { align: 'center' }
     );
 
     return doc;
