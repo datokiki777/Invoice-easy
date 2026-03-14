@@ -1275,68 +1275,70 @@ function buildPDFFromInvoice(inv) {
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
     const W = 210;
     const H = 297;
-    const margin = 14;
+    const mg = 14;
     const L = LANG[currentLang] || LANG.en;
     const co = APP_DATA.companies.find(c => c.id === inv.companyId) || getCurrentCompany() || createEmptyCompany();
 
-    // ── HEADER: measure info lines to set correct height ──
+    // ── HEADER ──
     const infoLines = [co.reg, co.addr, co.phone, co.email, co.website].filter(Boolean);
-    const headerH = 18 + infoLines.length * 5 + 4; // name(14) + lines + padding
+    const headerH = Math.max(36, 6 + 10 + infoLines.length * 4.8 + 6);
 
     doc.setFillColor(13, 61, 122);
     doc.rect(0, 0, W, headerH, 'F');
 
-    // Left: Company name
+    // Company name (left)
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(16);
-    doc.text(co.name || '', margin, 13);
+    doc.setFontSize(15);
+    doc.text(co.name || '', mg, 13);
 
-    // Left: Info lines (each on own line)
-    doc.setFontSize(8);
+    // Info lines — each on own row
+    doc.setFontSize(7.8);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(180, 210, 255);
-    infoLines.forEach((line, i) => {
-        doc.text(line, margin, 20 + i * 5);
+    doc.setTextColor(185, 215, 255);
+    infoLines.forEach(function(line, i) {
+        doc.text(String(line), mg, 19 + i * 4.8);
     });
 
-    // Right: INVOICE word — vertically centered in header
-    doc.setFontSize(26);
+    // INVOICE word (right, top)
+    doc.setFontSize(28);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(255, 255, 255);
-    doc.text(L.invoiceWord, W - margin, 14, { align: 'right' });
+    doc.text(L.invoiceWord, W - mg, 13, { align: 'right' });
 
-    // Right: Invoice # and Date
+    // Invoice # and Date below INVOICE
     doc.setFontSize(8.5);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(200, 225, 255);
-    doc.text(`${L.invoiceNum}  ${inv.num || ''}`, W - margin, 23, { align: 'right' });
-    doc.text(`${L.date}:  ${inv.date || ''}`, W - margin, 30, { align: 'right' });
+    var detailY = Math.max(24, 19 + Math.min(infoLines.length, 2) * 4.8);
+    doc.text(L.invoiceNum + '  ' + (inv.num || ''), W - mg, detailY, { align: 'right' });
+    doc.text(L.date + ':  ' + (inv.date || ''), W - mg, detailY + 5.5, { align: 'right' });
 
-    // ── BILLED TO + INVOICE DETAILS (two columns) ──
-    const boxY = headerH + 4;
-    const colW = (W - margin * 2) / 2 - 3;
+    // ── BILLED TO + INVOICE DETAILS ──
+    var boxY = headerH + 5;
+    var colW = (W - mg * 2) / 2 - 3;
+    var clientLines = (inv.client || '').split('\n').filter(Boolean).slice(0, 6);
+    var billedBoxH = Math.max(30, 13 + clientLines.length * 5.5);
+    var boxR = 230; var boxG = 236; var boxB = 248; // slightly tinted card bg
 
     // LEFT — Billed To
-    const clientLines = (inv.client || '').split('\n').filter(Boolean).slice(0, 6);
-    const billedBoxH = Math.max(28, 12 + clientLines.length * 5.5);
-    doc.setFillColor(245, 248, 255);
-    doc.roundedRect(margin, boxY, colW, billedBoxH, 3, 3, 'F');
+    doc.setFillColor(boxR, boxG, boxB);
+    doc.roundedRect(mg, boxY, colW, billedBoxH, 3, 3, 'F');
     doc.setTextColor(13, 61, 122);
     doc.setFontSize(7.5);
     doc.setFont('helvetica', 'bold');
-    doc.text(L.billedTo.toUpperCase(), margin + 4, boxY + 6);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(20, 20, 20);
-    doc.setFontSize(8.5);
+    doc.text(L.billedTo.toUpperCase(), mg + 4, boxY + 6);
     if (clientLines.length) {
-        doc.text(clientLines, margin + 4, boxY + 12, { lineHeightFactor: 1.5 });
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(20, 20, 20);
+        doc.setFontSize(8.5);
+        doc.text(clientLines, mg + 4, boxY + 12, { lineHeightFactor: 1.5 });
     }
 
     // RIGHT — Invoice Details
-    const rightX = margin + colW + 6;
-    const rightW = W - margin - rightX;
-    doc.setFillColor(245, 248, 255);
+    var rightX = mg + colW + 6;
+    var rightW = W - mg - rightX;
+    doc.setFillColor(boxR, boxG, boxB);
     doc.roundedRect(rightX, boxY, rightW, billedBoxH, 3, 3, 'F');
     doc.setTextColor(13, 61, 122);
     doc.setFontSize(7.5);
@@ -1351,45 +1353,44 @@ function buildPDFFromInvoice(inv) {
     doc.text(inv.date || '', rightX + rightW - 4, boxY + 23, { align: 'right' });
 
     // ── ITEMS TABLE ──
-    let y = boxY + billedBoxH + 4;
+    var y = boxY + billedBoxH + 5;
 
     doc.setFillColor(13, 61, 122);
-    doc.rect(margin, y, W - margin * 2, 9, 'F');
+    doc.rect(mg, y, W - mg * 2, 9, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
-    doc.text(L.description.toUpperCase(), margin + 4, y + 6);
+    doc.text(L.description.toUpperCase(), mg + 4, y + 6);
     doc.text(L.qty.toUpperCase(), 127, y + 6, { align: 'center' });
     doc.text(L.unitPrice.toUpperCase(), 158, y + 6, { align: 'center' });
-    doc.text(L.amount.toUpperCase(), W - margin - 2, y + 6, { align: 'right' });
+    doc.text(L.amount.toUpperCase(), W - mg - 2, y + 6, { align: 'right' });
 
     y += 9;
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
 
-    const items = inv.items || [];
-    let subtotal = 0;
+    var items = inv.items || [];
+    var subtotal = 0;
 
-    items.forEach((item, i) => {
-        const q = parseFloat(item.qty) || 0;
-        const p = parseFloat(item.price) || 0;
-        const t = q * p;
+    items.forEach(function(item, i) {
+        var q = parseFloat(item.qty) || 0;
+        var p = parseFloat(item.price) || 0;
+        var t = q * p;
         subtotal += t;
 
         if (i % 2 === 0) {
             doc.setFillColor(248, 250, 254);
-            doc.rect(margin, y, W - margin * 2, 9, 'F');
+            doc.rect(mg, y, W - mg * 2, 9, 'F');
         }
 
         doc.setTextColor(30, 30, 30);
-        const descLines = doc.splitTextToSize(item.desc || '', 96);
-        doc.text(descLines[0] || '', margin + 4, y + 6);
+        var descSplit = doc.splitTextToSize(item.desc || '', 96);
+        doc.text(descSplit[0] || '', mg + 4, y + 6);
         doc.text(String(q % 1 === 0 ? q : q.toFixed(2)), 127, y + 6, { align: 'center' });
-        doc.text('€' + p.toFixed(2), 158, y + 6, { align: 'center' });
-
+        doc.text('\u20ac' + p.toFixed(2), 158, y + 6, { align: 'center' });
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(13, 61, 122);
-        doc.text('€' + t.toFixed(2), W - margin - 2, y + 6, { align: 'right' });
+        doc.text('\u20ac' + t.toFixed(2), W - mg - 2, y + 6, { align: 'right' });
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(30, 30, 30);
         y += 9;
@@ -1398,57 +1399,57 @@ function buildPDFFromInvoice(inv) {
     y += 5;
 
     // ── SUMMARY ──
-    const sW = 88;
-    const sX = W - margin - sW;
+    var sW = 88;
+    var sX = W - mg - sW;
+    var vatRate = parseFloat(inv.vatRate) || 0;
+    var vat = subtotal * (vatRate / 100);
+    var total = subtotal + vat;
 
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(110, 110, 110);
     doc.text(L.subtotal, sX, y + 5);
-    doc.text('€' + subtotal.toFixed(2), W - margin, y + 5, { align: 'right' });
+    doc.text('\u20ac' + subtotal.toFixed(2), W - mg, y + 5, { align: 'right' });
     y += 8;
 
-    const vatRate = parseFloat(inv.vatRate) || 0;
-    const vat = subtotal * (vatRate / 100);
-    const total = subtotal + vat;
-    const vatLabel = L.vatLabel(vatRate) + (inv.vatText ? ' ' + inv.vatText : '');
+    var vatLabel = L.vatLabel(vatRate) + (inv.vatText ? ' ' + inv.vatText : '');
     doc.text(vatLabel, sX, y + 5);
-    doc.text('€' + vat.toFixed(2), W - margin, y + 5, { align: 'right' });
+    doc.text('\u20ac' + vat.toFixed(2), W - mg, y + 5, { align: 'right' });
     y += 6;
 
     doc.setFillColor(255, 193, 7);
-    doc.roundedRect(sX - 3, y, sW + margin + 3, 13, 3, 3, 'F');
+    doc.roundedRect(sX - 3, y, sW + mg + 3, 13, 3, 3, 'F');
     doc.setTextColor(13, 61, 122);
     doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
     doc.text(L.total, sX + 2, y + 9);
-    doc.text('€' + total.toFixed(2), W - margin - 2, y + 9, { align: 'right' });
+    doc.text('\u20ac' + total.toFixed(2), W - mg - 2, y + 9, { align: 'right' });
 
     y += 20;
 
     // ── BANK + TERMS ──
-    const footW = (W - margin * 2) / 2 - 3;
+    var footW = (W - mg * 2) / 2 - 3;
 
-    doc.setFillColor(245, 248, 255);
-    doc.roundedRect(margin, y, footW, 38, 3, 3, 'F');
+    doc.setFillColor(boxR, boxG, boxB);
+    doc.roundedRect(mg, y, footW, 38, 3, 3, 'F');
     doc.setTextColor(13, 61, 122);
     doc.setFontSize(7.5);
     doc.setFont('helvetica', 'bold');
-    doc.text(L.bankDetails.toUpperCase(), margin + 4, y + 7);
+    doc.text(L.bankDetails.toUpperCase(), mg + 4, y + 7);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(40, 40, 40);
     doc.setFontSize(8.5);
-    const bankLines = [
-        `${L.recipient}: ${co.bankRecip || ''}`,
-        `${L.bank}: ${co.bankName || ''}`,
-        `IBAN: ${co.bankIban || ''}`,
-        `BIC: ${co.bankBic || ''}`
+    var bankLines = [
+        L.recipient + ': ' + (co.bankRecip || ''),
+        L.bank + ': ' + (co.bankName || ''),
+        'IBAN: ' + (co.bankIban || ''),
+        'BIC: ' + (co.bankBic || '')
     ];
-    doc.text(bankLines, margin + 4, y + 14, { lineHeightFactor: 1.6 });
+    doc.text(bankLines, mg + 4, y + 14, { lineHeightFactor: 1.6 });
 
-    const tX = margin + footW + 6;
-    const tW = W - margin - tX;
-    doc.setFillColor(245, 248, 255);
+    var tX = mg + footW + 6;
+    var tW = W - mg - tX;
+    doc.setFillColor(boxR, boxG, boxB);
     doc.roundedRect(tX, y, tW, 38, 3, 3, 'F');
     doc.setTextColor(13, 61, 122);
     doc.setFontSize(7.5);
@@ -1472,6 +1473,7 @@ function buildPDFFromInvoice(inv) {
 
     return doc;
 }
+
 
 function exportPDF() {
     saveAllData();
