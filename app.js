@@ -60,7 +60,8 @@ function createEmptyCompany() {
         bankName: '',
         bankIban: '',
         bankBic: '',
-        logoKey: 'shared1'
+        logoKey: 'shared1',
+        lang: 'en'
     };
 }
 
@@ -80,13 +81,16 @@ function getCurrentCompany() {
 function ensureCurrentCompany() {
     if (!APP_DATA.companies) APP_DATA.companies = [];
 
-    if (APP_DATA.companies.length === 0) {
-        const company = createEmptyCompany();
-        APP_DATA.companies.push(company);
-        APP_DATA.currentCompanyId = company.id;
-    }
+    // Don't auto-create — let user add company manually
+    if (APP_DATA.companies.length === 0) return;
 
     if (!APP_DATA.currentCompanyId && APP_DATA.companies[0]) {
+        APP_DATA.currentCompanyId = APP_DATA.companies[0].id;
+    }
+
+    // Validate currentCompanyId still exists
+    const exists = APP_DATA.companies.find(c => c.id === APP_DATA.currentCompanyId);
+    if (!exists && APP_DATA.companies[0]) {
         APP_DATA.currentCompanyId = APP_DATA.companies[0].id;
     }
 
@@ -548,20 +552,61 @@ window.onload = function () {
 
     APP_DATA.currentInvoice.companyId = APP_DATA.currentCompanyId;
 
-    if (!APP_DATA.currentInvoice.num) APP_DATA.currentInvoice.num = generateInvoiceNumber();
-    if (!APP_DATA.currentInvoice.date) APP_DATA.currentInvoice.date = getCurrentDate();
+    if (!APP_DATA.currentInvoice.num || APP_DATA.currentInvoice.num.trim() === '') {
+        APP_DATA.currentInvoice.num = generateInvoiceNumber();
+    }
+    if (!APP_DATA.currentInvoice.date || APP_DATA.currentInvoice.date.trim() === '') {
+        APP_DATA.currentInvoice.date = getCurrentDate();
+    }
+    if (!APP_DATA.currentInvoice.items || APP_DATA.currentInvoice.items.length === 0) {
+        APP_DATA.currentInvoice.items = [{ desc: '', qty: 1, price: 0 }];
+    }
+
+    // If no companies yet — go straight to Companies page
+    const noCompanies = !APP_DATA.companies || APP_DATA.companies.length === 0;
+
+    // Load language from current company
+    const co = getCurrentCompany();
+    if (co && co.lang) {
+        currentLang = co.lang;
+    } else {
+        currentLang = localStorage.getItem('db_lang') || 'en';
+    }
 
     renderInvoiceForm();
     renderHistory();
     renderClients();
     renderCompanies();
     refreshClientPicker();
-    refreshCompanyPicker();
+    refreshNavCompanyPicker();
     refreshOwnerLogoOptionText();
     refreshLogoHelpText();
     refreshUnlockLogoButton();
     applyLang();
     initPWA();
+
+    // No companies → open Companies page so user can add one
+    if (noCompanies) {
+        showPage('companies');
+        setTimeout(() => showToast('🏢 Add your first company to get started!'), 600);
+    }
+
+    const modalConfirmBtn = document.getElementById('modal-confirm-btn');
+    if (modalConfirmBtn) {
+        modalConfirmBtn.onclick = function () {
+            const cb = modalCallback;
+            closeModal();
+            if (cb) cb();
+        };
+    }
+
+    const modalOverlay = document.getElementById('modal-overlay');
+    if (modalOverlay) {
+        modalOverlay.addEventListener('click', function (e) {
+            if (e.target === this) closeModal();
+        });
+    }
+};
 
     const modalConfirmBtn = document.getElementById('modal-confirm-btn');
     if (modalConfirmBtn) {
@@ -604,33 +649,35 @@ function renderInvoiceForm() {
     const ci = APP_DATA.currentInvoice;
     const co = getCurrentCompany() || createEmptyCompany();
 
-    document.getElementById('my_comp_name').value = co.name;
-    document.getElementById('my_reg_no').value = co.reg;
-    document.getElementById('my_addr').value = co.addr;
-    document.getElementById('my_phone').value = co.phone;
-    document.getElementById('my_email').value = co.email;
+    document.getElementById('my_comp_name').value = co.name || '';
+    document.getElementById('my_reg_no').value = co.reg || '';
+    document.getElementById('my_addr').value = co.addr || '';
+    document.getElementById('my_phone').value = co.phone || '';
+    document.getElementById('my_email').value = co.email || '';
     document.getElementById('my_website').value = co.website || '';
-    document.getElementById('bank_recip').value = co.bankRecip;
-    document.getElementById('bank_name').value = co.bankName;
-    document.getElementById('bank_iban').value = co.bankIban;
-    document.getElementById('bank_bic').value = co.bankBic;
+    document.getElementById('bank_recip').value = co.bankRecip || '';
+    document.getElementById('bank_name').value = co.bankName || '';
+    document.getElementById('bank_iban').value = co.bankIban || '';
+    document.getElementById('bank_bic').value = co.bankBic || '';
 
-    document.getElementById('inv_num').value = ci.num;
-    document.getElementById('inv_date').value = ci.date;
-    document.getElementById('client_info').value = ci.client;
-    document.getElementById('vat_rate').value = ci.vatRate;
+    document.getElementById('inv_num').value = ci.num || '';
+    document.getElementById('inv_date').value = ci.date || '';
+    document.getElementById('client_info').value = ci.client || '';
+    document.getElementById('vat_rate').value = ci.vatRate || 21;
     document.getElementById('vat_text').value = ci.vatText || '';
 
-    if (!ci.items || ci.items.length === 0) {
+    if (!ci.items || !Array.isArray(ci.items) || ci.items.length === 0) {
         ci.items = [{ desc: '', qty: 1, price: 0 }];
     }
 
     renderItemRows();
     calculateAll();
 
-    const logo = document.getElementById('company-logo');
-    if (logo) {
-        logo.src = getLogoPath(co);
+    // Logo — try image, fallback to inline SVG
+    const logoPath = getLogoPath(co);
+    const logoWrap = document.getElementById('logo-wrap');
+    if (logoWrap) {
+        logoWrap.innerHTML = `<img id="company-logo" src="${logoPath}" alt="Logo" onerror="document.getElementById('logo-wrap').innerHTML='<svg viewBox=\\'0 0 100 100\\' xmlns=\\'http://www.w3.org/2000/svg\\'><rect x=\\'6\\' y=\\'6\\' width=\\'88\\' height=\\'88\\' rx=\\'15\\' fill=\\'rgba(255,255,255,0.15)\\'/><path d=\\'M25 35 L50 20 L75 35 L50 50 Z\\' fill=\\'white\\'/><path d=\\'M25 50 L50 65 L75 50 L50 35 Z\\' fill=\\'rgba(255,255,255,0.7)\\'/><path d=\\'M25 65 L50 80 L75 65 L50 50 Z\\' fill=\\'white\\'/></svg>'">`;
     }
 
     // Restore client picker to saved selection
@@ -780,12 +827,17 @@ function saveInvoiceToHistory() {
 function renderHistory() {
     const list = document.getElementById('history-list');
 
-    if (!APP_DATA.invoices || APP_DATA.invoices.length === 0) {
+    // Filter to current company only
+    const companyInvoices = (APP_DATA.invoices || [])
+        .map((inv, realIdx) => ({ inv, realIdx }))
+        .filter(({ inv }) => inv.companyId === APP_DATA.currentCompanyId);
+
+    if (companyInvoices.length === 0) {
         list.innerHTML = `<div class="empty-state"><div class="empty-icon">🗂️</div><p>No invoices saved yet</p></div>`;
         return;
     }
 
-    list.innerHTML = APP_DATA.invoices.map((inv, i) => {
+    list.innerHTML = companyInvoices.map(({ inv, realIdx }) => {
         const subtotal = (inv.items || []).reduce(
             (s, it) => s + (parseFloat(it.qty) || 0) * (parseFloat(it.price) || 0),
             0
@@ -794,10 +846,7 @@ function renderHistory() {
         const total = subtotal + vat;
 
         const isCurrent = inv.num === APP_DATA.currentInvoice.num;
-        const clientName = (inv.client || '').split('\n')[0] || 'No client specified';
-
-        const company = APP_DATA.companies.find(c => c.id === inv.companyId);
-        const companyName = company?.name || 'No company';
+        const clientName = (inv.client || '').split('\n')[0] || 'No client';
 
         const savedDate = inv.savedAt
             ? new Date(inv.savedAt).toLocaleDateString('ka-GE')
@@ -807,12 +856,11 @@ function renderHistory() {
         <div class="history-card ${isCurrent ? 'current' : ''}">
             <div>
                 <div class="hist-num">${esc(inv.num)}</div>
-                <div class="hist-client">${esc(companyName)} — ${esc(clientName)}</div>
+                <div class="hist-client">${esc(clientName)}</div>
                 <div class="hist-meta">📅 ${esc(inv.date)}</div>
                 <div class="hist-actions">
-                    <button class="hist-btn hist-btn-load" onclick="loadInvoiceFromHistory(${i})">📂 Open</button>
-                    <button class="hist-btn hist-btn-pdf" onclick="exportHistoryPDF(${i})">📥 PDF</button>
-                    <button class="hist-btn hist-btn-del" onclick="deleteInvoice(${i})">🗑️ Delete</button>
+                    <button class="hist-btn hist-btn-load" onclick="loadInvoiceFromHistory(${realIdx})">📂 Open</button>
+                    <button class="hist-btn hist-btn-del" onclick="deleteInvoice(${realIdx})">🗑️ Delete</button>
                 </div>
             </div>
             <div class="hist-right">
@@ -1053,6 +1101,8 @@ function saveCompany() {
         document.getElementById('new_company_logo').value || 'shared1'
     );
 
+    const existingCompany = editId ? APP_DATA.companies.find(c => c.id === editId) : null;
+
     const company = {
         id: editId || 'company_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
         name,
@@ -1065,7 +1115,8 @@ function saveCompany() {
         bankName: document.getElementById('new_company_bank_name').value.trim(),
         bankIban: document.getElementById('new_company_bank_iban').value.trim(),
         bankBic: document.getElementById('new_company_bank_bic').value.trim(),
-        logoKey: selectedLogoKey
+        logoKey: selectedLogoKey,
+        lang: existingCompany ? (existingCompany.lang || 'en') : 'en'
     };
 
     if (editId) {
@@ -1075,19 +1126,41 @@ function saveCompany() {
         APP_DATA.companies.push(company);
     }
 
+    const isFirstCompany = !editId && APP_DATA.companies.length === 1;
+
     APP_DATA.currentCompanyId = company.id;
-    APP_DATA.currentInvoice.companyId = company.id;
+
+    // For new company, create fresh invoice with proper num/date
+    if (!editId) {
+        APP_DATA.currentInvoice = {
+            companyId: company.id,
+            num: generateInvoiceNumber(),
+            date: getCurrentDate(),
+            client: '',
+            clientId: '',
+            vatRate: 21,
+            vatText: '',
+            items: [{ desc: '', qty: 1, price: 0 }]
+        };
+    } else {
+        APP_DATA.currentInvoice.companyId = company.id;
+    }
 
     saveAppData();
     clearCompanyForm();
     renderCompanies();
-    refreshCompanyPicker();
+    refreshNavCompanyPicker();
     renderInvoiceForm();
     renderClients();
     refreshClientPicker();
     refreshOwnerLogoOptionText();
 
-    showToast('✅ Company saved!');
+    if (isFirstCompany) {
+        showPage('invoice');
+        showToast('✅ Company saved! Start creating your invoice.');
+    } else {
+        showToast('✅ Company saved!');
+    }
 }
 
 function renderCompanies() {
@@ -1215,10 +1288,11 @@ function deleteCompany(id) {
 
         saveAppData();
         renderCompanies();
-        refreshCompanyPicker();
+        refreshNavCompanyPicker();
         renderInvoiceForm();
         renderClients();
         refreshClientPicker();
+        renderHistory();
 
         showToast('🗑️ Company deleted');
     });
@@ -1232,273 +1306,60 @@ function switchCompany(id) {
 
     APP_DATA.currentCompanyId = id;
 
-    APP_DATA.currentInvoice = {
-        companyId: id,
-        num: generateInvoiceNumber(),
-        date: getCurrentDate(),
-        client: '',
-        vatRate: 21,
-        vatText: '',
-        items: [{ desc: '', qty: 1, price: 0 }]
-    };
+    // Load company language
+    currentLang = company.lang || 'en';
+
+    // Restore this company's draft invoice if exists, else create new
+    const draft = APP_DATA.invoices.find(inv => inv.companyId === id && inv._isDraft);
+    if (draft) {
+        APP_DATA.currentInvoice = JSON.parse(JSON.stringify(draft));
+    } else {
+        APP_DATA.currentInvoice = {
+            companyId: id,
+            num: generateInvoiceNumber(),
+            date: getCurrentDate(),
+            client: '',
+            clientId: '',
+            vatRate: 21,
+            vatText: '',
+            items: [{ desc: '', qty: 1, price: 0 }]
+        };
+    }
 
     saveAppData();
-    refreshCompanyPicker();
+    refreshNavCompanyPicker();
     renderInvoiceForm();
     renderClients();
     refreshClientPicker();
+    renderHistory();
+    applyLang();
     showPage('invoice');
 
-    showToast('🏢 New invoice started for selected company');
+    showToast('🏢 ' + (company.name || 'Company') + ' selected');
 }
 
-function refreshCompanyPicker() {
-    const sel = document.getElementById('company_picker');
+function refreshNavCompanyPicker() {
+    const sel = document.getElementById('nav_company_picker');
     if (!sel) return;
 
-    sel.innerHTML = '<option value="">— Select a company —</option>';
+    sel.innerHTML = '';
 
     (APP_DATA.companies || []).forEach(c => {
         const opt = document.createElement('option');
         opt.value = c.id;
-        opt.textContent = c.name || 'Untitled Company';
+        opt.textContent = (c.name || 'Untitled') + (c.lang === 'de' ? ' 🇩🇪' : ' 🇬🇧');
         if (c.id === APP_DATA.currentCompanyId) opt.selected = true;
         sel.appendChild(opt);
     });
-}
 
-// =========================================
-// PDF EXPORT (jsPDF)
-// =========================================
-function buildPDFFromInvoice(inv) {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-    const W = 210;
-    const H = 297;
-    const mg = 14;
-    const L = LANG[currentLang] || LANG.en;
-    const co = APP_DATA.companies.find(c => c.id === inv.companyId) || getCurrentCompany() || createEmptyCompany();
-
-    // ── HEADER ──
-    const infoLines = [co.reg, co.addr, co.phone, co.email, co.website].filter(Boolean);
-    const headerH = Math.max(36, 6 + 10 + infoLines.length * 4.8 + 6);
-
-    doc.setFillColor(13, 61, 122);
-    doc.rect(0, 0, W, headerH, 'F');
-
-    // Company name (left)
-    doc.setTextColor(255, 255, 255);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(15);
-    doc.text(co.name || '', mg, 13);
-
-    // Info lines — each on own row
-    doc.setFontSize(7.8);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(185, 215, 255);
-    infoLines.forEach(function(line, i) {
-        doc.text(String(line), mg, 19 + i * 4.8);
-    });
-
-    // INVOICE word (right, top)
-    doc.setFontSize(28);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(255, 255, 255);
-    doc.text(L.invoiceWord, W - mg, 13, { align: 'right' });
-
-    // Invoice # and Date below INVOICE
-    doc.setFontSize(8.5);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(200, 225, 255);
-    var detailY = Math.max(24, 19 + Math.min(infoLines.length, 2) * 4.8);
-    doc.text(L.invoiceNum + '  ' + (inv.num || ''), W - mg, detailY, { align: 'right' });
-    doc.text(L.date + ':  ' + (inv.date || ''), W - mg, detailY + 5.5, { align: 'right' });
-
-    // ── BILLED TO + INVOICE DETAILS ──
-    var boxY = headerH + 5;
-    var colW = (W - mg * 2) / 2 - 3;
-    var clientLines = (inv.client || '').split('\n').filter(Boolean).slice(0, 6);
-    var billedBoxH = Math.max(30, 13 + clientLines.length * 5.5);
-    var boxR = 230; var boxG = 236; var boxB = 248; // slightly tinted card bg
-
-    // LEFT — Billed To
-    doc.setFillColor(boxR, boxG, boxB);
-    doc.roundedRect(mg, boxY, colW, billedBoxH, 3, 3, 'F');
-    doc.setTextColor(13, 61, 122);
-    doc.setFontSize(7.5);
-    doc.setFont('helvetica', 'bold');
-    doc.text(L.billedTo.toUpperCase(), mg + 4, boxY + 6);
-    if (clientLines.length) {
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(20, 20, 20);
-        doc.setFontSize(8.5);
-        doc.text(clientLines, mg + 4, boxY + 12, { lineHeightFactor: 1.5 });
-    }
-
-    // RIGHT — Invoice Details
-    var rightX = mg + colW + 6;
-    var rightW = W - mg - rightX;
-    doc.setFillColor(boxR, boxG, boxB);
-    doc.roundedRect(rightX, boxY, rightW, billedBoxH, 3, 3, 'F');
-    doc.setTextColor(13, 61, 122);
-    doc.setFontSize(7.5);
-    doc.setFont('helvetica', 'bold');
-    doc.text((L.invoiceDetails || 'Invoice Details').toUpperCase(), rightX + 4, boxY + 6);
-    doc.setFontSize(9);
-    doc.text(L.invoiceNum, rightX + 4, boxY + 15);
-    doc.text(L.date, rightX + 4, boxY + 23);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(20, 20, 20);
-    doc.text(inv.num || '', rightX + rightW - 4, boxY + 15, { align: 'right' });
-    doc.text(inv.date || '', rightX + rightW - 4, boxY + 23, { align: 'right' });
-
-    // ── ITEMS TABLE ──
-    var y = boxY + billedBoxH + 5;
-
-    doc.setFillColor(13, 61, 122);
-    doc.rect(mg, y, W - mg * 2, 9, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'bold');
-    doc.text(L.description.toUpperCase(), mg + 4, y + 6);
-    doc.text(L.qty.toUpperCase(), 127, y + 6, { align: 'center' });
-    doc.text(L.unitPrice.toUpperCase(), 158, y + 6, { align: 'center' });
-    doc.text(L.amount.toUpperCase(), W - mg - 2, y + 6, { align: 'right' });
-
-    y += 9;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-
-    var items = inv.items || [];
-    var subtotal = 0;
-
-    items.forEach(function(item, i) {
-        var q = parseFloat(item.qty) || 0;
-        var p = parseFloat(item.price) || 0;
-        var t = q * p;
-        subtotal += t;
-
-        if (i % 2 === 0) {
-            doc.setFillColor(248, 250, 254);
-            doc.rect(mg, y, W - mg * 2, 9, 'F');
-        }
-
-        doc.setTextColor(30, 30, 30);
-        var descSplit = doc.splitTextToSize(item.desc || '', 96);
-        doc.text(descSplit[0] || '', mg + 4, y + 6);
-        doc.text(String(q % 1 === 0 ? q : q.toFixed(2)), 127, y + 6, { align: 'center' });
-        doc.text('\u20ac' + p.toFixed(2), 158, y + 6, { align: 'center' });
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(13, 61, 122);
-        doc.text('\u20ac' + t.toFixed(2), W - mg - 2, y + 6, { align: 'right' });
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(30, 30, 30);
-        y += 9;
-    });
-
-    y += 5;
-
-    // ── SUMMARY ──
-    var sW = 88;
-    var sX = W - mg - sW;
-    var vatRate = parseFloat(inv.vatRate) || 0;
-    var vat = subtotal * (vatRate / 100);
-    var total = subtotal + vat;
-
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(110, 110, 110);
-    doc.text(L.subtotal, sX, y + 5);
-    doc.text('\u20ac' + subtotal.toFixed(2), W - mg, y + 5, { align: 'right' });
-    y += 8;
-
-    var vatLabel = L.vatLabel(vatRate) + (inv.vatText ? ' ' + inv.vatText : '');
-    doc.text(vatLabel, sX, y + 5);
-    doc.text('\u20ac' + vat.toFixed(2), W - mg, y + 5, { align: 'right' });
-    y += 6;
-
-    doc.setFillColor(255, 193, 7);
-    doc.roundedRect(sX - 3, y, sW + mg + 3, 13, 3, 3, 'F');
-    doc.setTextColor(13, 61, 122);
-    doc.setFontSize(13);
-    doc.setFont('helvetica', 'bold');
-    doc.text(L.total, sX + 2, y + 9);
-    doc.text('\u20ac' + total.toFixed(2), W - mg - 2, y + 9, { align: 'right' });
-
-    y += 20;
-
-    // ── BANK + TERMS ──
-    var footW = (W - mg * 2) / 2 - 3;
-
-    doc.setFillColor(boxR, boxG, boxB);
-    doc.roundedRect(mg, y, footW, 38, 3, 3, 'F');
-    doc.setTextColor(13, 61, 122);
-    doc.setFontSize(7.5);
-    doc.setFont('helvetica', 'bold');
-    doc.text(L.bankDetails.toUpperCase(), mg + 4, y + 7);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(40, 40, 40);
-    doc.setFontSize(8.5);
-    var bankLines = [
-        L.recipient + ': ' + (co.bankRecip || ''),
-        L.bank + ': ' + (co.bankName || ''),
-        'IBAN: ' + (co.bankIban || ''),
-        'BIC: ' + (co.bankBic || '')
-    ];
-    doc.text(bankLines, mg + 4, y + 14, { lineHeightFactor: 1.6 });
-
-    var tX = mg + footW + 6;
-    var tW = W - mg - tX;
-    doc.setFillColor(boxR, boxG, boxB);
-    doc.roundedRect(tX, y, tW, 38, 3, 3, 'F');
-    doc.setTextColor(13, 61, 122);
-    doc.setFontSize(7.5);
-    doc.setFont('helvetica', 'bold');
-    doc.text(L.terms.toUpperCase(), tX + 4, y + 7);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(100, 100, 100);
-    doc.setFontSize(8.5);
-    doc.text(L.termsText.replace('\\n', '\n'), tX + 4, y + 14, {
-        lineHeightFactor: 1.6,
-        maxWidth: tW - 8
-    });
-
-    // ── FOOTER ──
-    doc.setFontSize(7.5);
-    doc.setTextColor(160, 160, 160);
-    doc.text(
-        [co.name, co.email, co.phone, co.website].filter(Boolean).join('  |  '),
-        W / 2, H - 8, { align: 'center' }
-    );
-
-    return doc;
-}
-
-
-function exportPDF() {
-    saveAllData();
-
-    try {
-        const doc = buildPDFFromInvoice(APP_DATA.currentInvoice);
-        doc.save(`invoice-${APP_DATA.currentInvoice.num || 'draft'}.pdf`);
-        showToast('📥 PDF ready!');
-    } catch (e) {
-        showToast('❌ PDF error: ' + e.message);
+    if (APP_DATA.companies.length === 0) {
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = '— No companies —';
+        sel.appendChild(opt);
     }
 }
 
-function exportHistoryPDF(index) {
-    const inv = APP_DATA.invoices[index];
-    if (!inv) return;
-
-    try {
-        const doc = buildPDFFromInvoice(inv);
-        doc.save(`invoice-${inv.num || 'draft'}.pdf`);
-        showToast('📥 PDF: ' + inv.num);
-    } catch (e) {
-        showToast('❌ PDF error');
-    }
-}
 
  // =========================================
 // LOGO RENDER
@@ -1531,6 +1392,7 @@ function generateInvoiceNumber() {
     const year = new Date().getFullYear();
 
     const lastNums = (APP_DATA.invoices || [])
+        .filter(i => i.companyId === APP_DATA.currentCompanyId)
         .map(i => i.num)
         .filter(n => n && n.startsWith(year + '-'))
         .map(n => parseInt(n.split('-')[1]) || 0);
@@ -1584,7 +1446,14 @@ function setTxt(sel, txt) {
 // =========================================
 function toggleLang() {
     currentLang = currentLang === 'en' ? 'de' : 'en';
-    localStorage.setItem('db_lang', currentLang);
+    // Save lang to current company
+    const co = getCurrentCompany();
+    if (co) {
+        co.lang = currentLang;
+        saveAppData();
+    } else {
+        localStorage.setItem('db_lang', currentLang);
+    }
     applyLang();
 }
 
