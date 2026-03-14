@@ -1072,6 +1072,10 @@ textarea.form-input {
         display: none !important;
     }
 
+    body {
+        background: white !important;
+    }
+
     .page {
         display: block !important;
         padding: 0;
@@ -1090,6 +1094,8 @@ textarea.form-input {
 
     .inv-card {
         box-shadow: none;
+        border-radius: 0;
+        margin: 0;
     }
 
     * {
@@ -1106,8 +1112,37 @@ textarea.form-input {
         display: none !important;
     }
 
+    /* Hide ALL dropdowns/selects */
     .client-select-row {
         display: none !important;
+    }
+
+    /* Hide "Company" label — first meta-label in meta-left */
+    .meta-left > .meta-label:first-of-type {
+        display: none !important;
+    }
+
+    /* Textarea: borderless, clean */
+    .client-textarea {
+        border: none !important;
+        padding: 0 !important;
+        resize: none !important;
+        background: transparent !important;
+        font-size: 13px !important;
+        min-height: unset !important;
+    }
+
+    /* All input borders hidden for print */
+    .vat-rate-input,
+    .vat-note-input,
+    .bank-input,
+    .meta-text-input,
+    .inv-input,
+    .item-desc-input,
+    .item-num-input {
+        border: none !important;
+        background: transparent !important;
+        outline: none !important;
     }
 }
 
