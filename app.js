@@ -26,13 +26,31 @@ let APP_DATA = {
 };
 
 // ============================
-// LOGO PATHS
+// LOGO PATHS / INLINE SVGs
 // ============================
 
 const LOGOS = {
     owner: "icons/mylogo.svg",
-    shared1: "icons/logo.svg",
-    shared2: "icons/b.logo.svg"
+    shared1: null,  // inline
+    shared2: null   // inline
+};
+
+const LOGO_SVG = {
+    shared1: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <rect x="4" y="4" width="92" height="92" rx="18" fill="rgba(255,255,255,0.18)"/>
+        <rect x="8" y="8" width="84" height="84" rx="14" fill="#0d3d7a"/>
+        <path d="M25 35 L50 20 L75 35 L50 50 Z" fill="white"/>
+        <path d="M25 50 L50 65 L75 50 L50 35 Z" fill="rgba(255,255,255,0.65)"/>
+        <path d="M25 65 L50 80 L75 65 L50 50 Z" fill="white"/>
+        <circle cx="50" cy="50" r="6" fill="#0d3d7a"/>
+    </svg>`,
+    shared2: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <rect x="4" y="4" width="92" height="92" rx="18" fill="rgba(255,255,255,0.18)"/>
+        <rect x="8" y="8" width="84" height="84" rx="14" fill="#1a5cad"/>
+        <rect x="22" y="28" width="56" height="8" rx="4" fill="white"/>
+        <rect x="22" y="46" width="40" height="8" rx="4" fill="rgba(255,255,255,0.75)"/>
+        <rect x="22" y="64" width="48" height="8" rx="4" fill="white"/>
+    </svg>`
 };
 
 // =========================================
@@ -670,21 +688,25 @@ function renderInvoiceForm() {
     calculateAll();
 
     // Logo
-    const logoPath = getLogoPath(co);
     const logoWrap = document.getElementById('logo-wrap');
     if (logoWrap) {
-        const img = document.createElement('img');
-        img.id = 'company-logo';
-        img.alt = 'Logo';
-        img.style.width = '100%';
-        img.style.height = '100%';
-        img.style.objectFit = 'contain';
-        img.onerror = function() {
-            logoWrap.innerHTML = getNeutralLogoSVG();
-        };
-        img.src = logoPath;
-        logoWrap.innerHTML = '';
-        logoWrap.appendChild(img);
+        const key = co.logoKey || 'shared1';
+        if (key === 'owner') {
+            // Try loading owner's custom SVG file
+            const img = document.createElement('img');
+            img.id = 'company-logo';
+            img.alt = 'Logo';
+            img.style.cssText = 'width:100%;height:100%;object-fit:contain;';
+            img.onerror = function() {
+                logoWrap.innerHTML = LOGO_SVG.shared1;
+            };
+            img.src = LOGOS.owner;
+            logoWrap.innerHTML = '';
+            logoWrap.appendChild(img);
+        } else {
+            // Shared logos — always inline, no file needed
+            logoWrap.innerHTML = LOGO_SVG[key] || LOGO_SVG.shared1;
+        }
     }
 
     // Restore client picker to saved selection
@@ -1087,8 +1109,21 @@ function fillClientFromPicker() {
         saveAppData();
         return;
     }
-    useClientForInvoice(id);
-    // Keep picker showing selected name — do NOT reset to ''
+
+    const c = APP_DATA.clients.find(cl => cl.id === id);
+    if (!c) return;
+
+    let info = c.name;
+    if (c.reg) info += '\n' + c.reg;
+    if (c.addr) info += '\n' + c.addr;
+    if (c.email) info += '\n' + c.email;
+    if (c.phone) info += '\n' + c.phone;
+
+    APP_DATA.currentInvoice.client = info;
+    APP_DATA.currentInvoice.clientId = id;
+    document.getElementById('client_info').value = info;
+    saveAppData();
+    showToast('👤 ' + c.name);
 }
 
   // =========================================
