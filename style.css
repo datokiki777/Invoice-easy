@@ -31,12 +31,12 @@ body {
 
 .top-nav {
     background: var(--primary);
-    padding: 0 12px;
+    padding: 0 10px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    min-height: 58px;
-    gap: 10px;
+    justify-content: flex-end;
+    min-height: 52px;
+    gap: 0;
     position: sticky;
     top: 0;
     z-index: 100;
@@ -63,7 +63,8 @@ body {
 .top-nav-right {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+    width: 100%;
     min-width: 0;
 }
 
@@ -116,6 +117,38 @@ body {
 
 .lang-toggle:hover {
     background: rgba(255,255,255,0.28);
+}
+
+.nav-company-select {
+    background: rgba(255,255,255,0.15);
+    border: 1.5px solid rgba(255,255,255,0.4);
+    color: white;
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    flex: 1;
+    min-width: 0;
+    max-width: 200px;
+    appearance: none;
+    -webkit-appearance: none;
+    outline: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.nav-company-select option {
+    background: #0d3d7a;
+    color: white;
+    font-weight: 600;
+}
+
+.nav-company-select:focus {
+    background: rgba(255,255,255,0.22);
+    border-color: rgba(255,255,255,0.7);
 }
 
 /* ===== PAGES ===== */
@@ -680,11 +713,6 @@ body {
     color: white;
 }
 
-.btn-pdf {
-    background: linear-gradient(135deg, #e53e3e, #c53030);
-    color: white;
-}
-
 /* Status bar */
 
 .status-bar {
@@ -844,11 +872,6 @@ body {
 
 .hist-btn-load {
     background: var(--primary);
-    color: white;
-}
-
-.hist-btn-pdf {
-    background: #e53e3e;
     color: white;
 }
 
@@ -1226,12 +1249,14 @@ textarea.form-input {
     }
 
     .inv-header {
-        grid-template-columns: 1fr;
-        gap: 12px;
+        grid-template-columns: 1fr auto;
+        padding: 16px 14px;
+        gap: 10px;
     }
 
     .invoice-title-block {
-        text-align: left;
+        text-align: right;
+        align-self: start;
     }
 
     .invoice-word {
@@ -1239,20 +1264,27 @@ textarea.form-input {
     }
 
     .inv-input.company-name {
-        font-size: 16px;
+        font-size: 15px;
+        width: 100%;
     }
 
     .inv-input {
         width: 100%;
+        font-size: 12px;
     }
 
     .inv-meta {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
     }
 
     .meta-left {
-        border-right: none;
-        border-bottom: 1px solid var(--border);
+        border-right: 1px solid var(--border);
+        border-bottom: none;
+        padding: 14px 12px;
+    }
+
+    .meta-right {
+        padding: 14px 12px;
     }
 
     .inv-footer-grid {
@@ -1278,52 +1310,52 @@ textarea.form-input {
 
     .items-table th,
     .items-table td {
-        padding: 6px 4px;
+        padding: 5px 3px;
         font-size: 11px;
     }
 
-    .items-table th:first-child {
+    .items-table th:first-child,
+    .items-table td:first-child {
+        padding-left: 8px;
         width: auto;
     }
 
     .items-table th:nth-child(2) {
-        width: 56px;
+        width: 44px;
     }
 
     .items-table th:nth-child(3) {
-        width: 92px;
+        width: 80px;
     }
 
     .items-table th:nth-child(4) {
-        width: 88px;
+        width: 70px;
+        padding-right: 8px;
     }
 
     .item-desc-input {
         font-size: 12px;
-        padding: 6px 6px;
+        padding: 5px 4px;
+        width: 100%;
     }
 
     .item-num-input {
-        width: 54px;
+        width: 36px !important;
         font-size: 12px;
-        padding: 6px 2px;
+        padding: 5px 2px;
     }
 
     .item-price-wrap .item-num-input {
-        width: 70px;
+        width: 56px !important;
     }
 
     .item-price-wrap .currency {
-        font-size: 12px;
+        font-size: 11px;
     }
 
     .item-total-cell {
         font-size: 12px;
-    }
-
-    .remove-row-btn {
-        font-size: 14px;
-        padding: 2px;
+        padding-right: 8px;
     }
 }
 
